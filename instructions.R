@@ -20,10 +20,12 @@
 #   destdir = "~/Documents/UvicTerm1/S564/" ### CHANGE the destination directory!!!
 # )
 
+
 ### Change the name and email, this strictly sets the local user in
 ### the file .git/config (a hidden file!!!)
-# git config --local user.name "Dayten Sheffar"
-# git config --local user.email "sheffardj@gmail.com"
+# git config --global user.name "Dayten Sheffar"
+# git config --global user.email "sheffardj@gmail.com"
+# git config credential.useHttpPath true
 
 ## If that all worked as expected (unlikely) then
 ## you should be able to pull and push changes via: 

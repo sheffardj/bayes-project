@@ -9,4 +9,4 @@
 
 ### Instructions
 
-See the "Init.R" files in `/Morgan` and `/Hanan` for connecting you github account.
+See the "instructions.R" file for connecting your github account. I can help, it is not usually an easy process but worth it once it is set up.

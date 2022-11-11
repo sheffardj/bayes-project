@@ -1,6 +1,6 @@
 root <- find_rstudio_root_file()
-setwd(paste0(root,"/Hanan"))
+setwd(paste0(root,"/Dayten"))
 cat(paste("PROJECT DIR:", paste0("'", getwd(), "'"), sep='\n'))
 source("seed.R")
 invisible(source("libraries.R"))
-print("SEED IS SET & LIBRARIES LOADED")
+print("READY TO RUN CODE IN /DAYTEN")
