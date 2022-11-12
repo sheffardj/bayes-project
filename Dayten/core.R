@@ -47,7 +47,7 @@ if(0){ # NOT RUN!
 }
 
 # PROPER RUN
-res.long <- run(-10, posterior, prior, 100000)
+res.long <- run(-10, posterior, prior, 50000)
 hist(res.long, 100, freq=FALSE, main="", ylim=c(0, 1.5*max(hist(res)$density)), las=1,
      xlab="x", ylab="Probability density", col="grey")
 z <- integrate(posterior, -Inf, Inf)$value
