@@ -10,16 +10,15 @@
 # git --version
 ## -> should output something like "git version 2.37.2"
 
-# git config user.name "Your Name"
-# git config user.email "your@github_email.com"
+# git config --global user.name "Your Name"
+# git config --global user.email "your@github_email.com"
 
 ### Install "usethis" then run the create_from_github command
 # install.packages('usethis')
 # usethis::create_from_github(
 #   "sheffardj/bayes-project", #LEAVE THIS!!!
 #   destdir = "~/Documents/UvicTerm1/S564/", ### CHANGE the destination directory!!!
-#   fork=FALSE,
-#   protocol='https'
+#   fork=FALSE
 # )
 
 
