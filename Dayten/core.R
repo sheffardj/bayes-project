@@ -3,6 +3,7 @@ source(paste0(getwd(),'/posteriors/multi_modal_1d.R'))
 ## guess at a  prior
 prior <- function(x) rnorm(1, x, 7)
 
+if(1){ #### EXTRACT THIS STEP TO NEW FILE AND SOURCE()
 ## mcmc step?
 step <- function(x, posterior, prior) {
   ## Pick new point
@@ -22,6 +23,7 @@ run <- function(x, posterior, prior, nsteps) {
   for (i in seq_len(nsteps))
     res[i,] <- x <- step(x, posterior, prior)
   drop(res)
+}
 }
 
 if(0){ # NOT RUN! change  0 to 1 to force run
