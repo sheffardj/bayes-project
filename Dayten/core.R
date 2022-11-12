@@ -1,5 +1,7 @@
 source(paste0(getwd(),'/posteriors/multi_modal_1d.R'))
 
+#some devtool here.
+
 ## guess at a  prior
 prior <- function(x) rnorm(1, x, 7)
 
