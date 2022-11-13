@@ -3,20 +3,62 @@ title: "Untitled"
 output: pdf_document
 date: "2022-11-12"
 ---
+# Set up true function 
 
 ```{r}
+
+f <- function(x){ 
+  p <- .4
+  p*dgamma(x,.5,.5 ) + (1-p)*dgamma(x, 2,5)
+}
+curve(f(x), col="blue")
+```
+
+
+
+```{r}
+est1 <- function(x){
+  rnorm(1, x, 4)
+}
+
+
+
+steps <- function(x, f, est) {
+    
+    x0 <- est(x)
+    
+    acc <- min(1, f(x0) / f(x))
+  
+    if (runif(1) < acc)
+        x <- x0
+    
+    x
+}
+run <- function(x, f, est, ns) {
+    store <- matrix(NA, ns, length(x))
+    for (i in seq_len(ns))
+        store[i,] <- x <- steps(x, f, est)
+    drop(store)
+}
+store <- run(.2, f, est, 1000)
 ```
 
 
 ```{r}
+layout(matrix(c(1, 2), 1, 2), widths=c(4, 1))
+par(mar=c(4.1, .5, .5, .5), oma=c(0, 4.1, 0, 0))
+plot(store, type = 's')
+usr <- par("usr")
+xx <- seq(usr[3], usr[4], length=301)
+plot(f(xx), xx, type="l", yaxs="i", axes=FALSE, xlab="")
 ```
 
-
 ```{r}
-```
+hist(store, 50, freq=FALSE, main="", 
+     xlab="x", ylab="Probability density")
+z <- integrate(f, -Inf, Inf)$value
+curve(f(x) / z, add=TRUE, col="red", n=200)
 
-
-```{r}
 ```
 
 
