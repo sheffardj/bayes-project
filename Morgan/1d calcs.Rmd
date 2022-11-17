@@ -21,9 +21,16 @@ dats3 <- rlogitnorm(15000, 0, .32)
 
 # the priors 
 ```{r}
-un <- dunif(dats1, -1, 1)
-nor <- dnorm(dats1, 0, 1)
-bet <- dbeta(dats1, .5, .5)
+un <- function (d) {
+  dunif(d, -1, 1)
+  }
+nor <- function (d){
+  dnorm(d, 0, 1)
+  }
+bet <- function(d){
+  dbeta(d, .5, .5)
+}
+
 ```
 # funtion to out put the graph and estimates
 ```{r}
@@ -42,25 +49,25 @@ est.calc <- function(dat, prior, s){
 
 # logitnorm sigma = 3.16
 ```{r}
-est.calc( dats, un, 3.16)
-est.calc(dats, nor, 3.16)
-est.calc(dats, bet, 3.16)
+est.calc(dats1, prior = un(dats1), 3.16)
+est.calc(dats1, nor(dats1), 3.16)
+est.calc(dats1, bet(dats1), 3.16)
 
 ```
 
 # logitnorm with sigma = 1.78
 ```{r}
-est.calc(dats2, un, 1.78)
-est.calc(dats2, nor, 1.78)
-est.calc(dats2, bet, 1.78)
+est.calc(dats2, un(dats2), 1.78)
+est.calc(dats2, nor(dats2), 1.78)
+est.calc(dats2, bet(dats2), 1.78)
 
 ```
 
 #logitnorm sigma = .32
 ```{r}
-est.calc(dats3, un, .32)
-est.calc(dats3, nor, .32)
-est.calc(dats3, bet, .32)
+est.calc(dats3, un(dats3), .32)
+est.calc(dats3, nor(dats3), .32)
+est.calc(dats3, bet(dats3), .32)
 
 ```
 
