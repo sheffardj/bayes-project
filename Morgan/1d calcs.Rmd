@@ -4,3 +4,109 @@ output: pdf_document
 date: "2022-11-17"
 ---
 
+$$
+p(\sigma|x) = \frac{p(\sigma)p(x|\sigma)}{\int p(\sigma)p(x|\sigma)}\\
+
+$$
+
+Working with the logit normal we will first calculate the top of the fraction 
+```{r}
+library(logitnorm)
+dats1 <- rlogitnorm(15000, 0, 3.16)
+dats2 <- rlogitnorm(15000, 0, 1.78)
+dats3 <- rlogitnorm(15000, 0, .32)
+
+
+```
+
+# prior uniform 
+```{r}
+est1 <- mean(dlogitnorm(dats, 0,2.7)*dunif(dats,-1,1))
+hist(dlogitnorm(dats, 1,2.7)*dunif(dats,-1,1), probability = T, breaks = 50)
+
+hist(dats, probability = T)
+curve(dlogitnorm(x, 0, 3.16), col = 'red', add = T)
+curve(dlogitnorm(x, 1, est1), col ='blue', add = T)
+
+```
+# the priors 
+```{r}
+un <- dunif(dats1, -1, 1)
+nor <- dnorm(dats1, 0, 1)
+bet <- dbeta(dats1, .5, .5)
+```
+# funtion to out put the graph and estimates
+```{r}
+est.calc <- function(dat, prior, s){
+  est <- mean(dlogitnorm(dat, 0, s)*prior)
+  # hist(dlogitnorm(dats, 1,2.7)*dunif(dats,-1,1), probability = T, breaks = 50)
+
+  hist(dat, probability = T, ylim = c(0,5))
+  curve(dlogitnorm(x, 0, s), col = 'red', add = T)
+  curve(dlogitnorm(x, 1, est), col ='blue', add = T)
+  print(est)
+}
+
+
+```
+
+# logitnorm sigma = 3.16
+```{r}
+est.calc( dats, un, 3.16)
+est.calc(dats, nor, 3.16)
+est.calc(dats, bet, 3.16)
+
+```
+
+# logitnorm with sigma = 1.78
+```{r}
+est.calc(dats2, un, 1.78)
+est.calc(dats2, nor, 1.78)
+est.calc(dats2, bet, 1.78)
+
+```
+
+#logitnorm sigma = .32
+```{r}
+est.calc(dats3, un, .32)
+est.calc(dats3, nor, .32)
+est.calc(dats3, bet, .32)
+
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
