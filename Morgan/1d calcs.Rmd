@@ -19,16 +19,6 @@ dats3 <- rlogitnorm(15000, 0, .32)
 
 ```
 
-# prior uniform 
-```{r}
-est1 <- mean(dlogitnorm(dats, 0,2.7)*dunif(dats,-1,1))
-hist(dlogitnorm(dats, 1,2.7)*dunif(dats,-1,1), probability = T, breaks = 50)
-
-hist(dats, probability = T)
-curve(dlogitnorm(x, 0, 3.16), col = 'red', add = T)
-curve(dlogitnorm(x, 1, est1), col ='blue', add = T)
-
-```
 # the priors 
 ```{r}
 un <- dunif(dats1, -1, 1)
