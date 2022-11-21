@@ -8,6 +8,14 @@ zz %>% hist(., probability=T)
 mu0 <- logit(zz) %>% mean()
 sigma0 <- sqrt(logit(zz) %>% var())
 
+# but we will need vector estimates for the prior for mu, assuming ~ Normal
+sample_mu <- rnorm(1e4, mu0, 0.1)
+sample_mu %>% hist(., probability=T)
+
+# and again for sigma, assuming ~ Uniform
+sample_sigma <- runif(1e4, sigma0 - 1, sigma0 + 1)
+sample_sigma %>% hist(., probability=T)
+
 # Take a look the prior distribution with the estimated mu and sigma vectors
 prior_zz <- rlogitnorm(1e4, sample_mu, sample_sigma)
 prior_zz %>% hist(., probability=T)
@@ -16,13 +24,13 @@ prior_zz %>% hist(., probability=T)
 curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue')
 
 # simpsons params
-nx = ny = 50 #number of subdivisions
+nx = ny = 1000 #number of subdivisions
 n1 = 2 * nx + 1 # length of mu sequence
 n2 = 2 * ny + 1 # length of sigma sequence
-ax = mu0 - 0.1 # range for mu
-bx = mu0 + 0.1
-ay = sigma0 - 0.1 # range for sigma
-by = sigma0 + 0.1
+ax = mu0 - 2 # range for mu
+bx = mu0 + 2
+ay = sigma0 - 2 # range for sigma
+by = sigma0 + 2
 h1 = (bx - ax) / (n1 - 1)  #length of subdivisions
 h2 = (by - ay) / (n2 - 1)
 
@@ -41,8 +49,8 @@ yy=matrix(y_seq, nrow=n1, ncol=n2, byrow=T)
 
 # our likelihood function
 lh <- function(mu, sigma) {
-  dlogitnorm(zz, mu, sigma) * dnorm(zz, mu, 0.1) *
-    dunif(zz, 0, sigma + 1)
+  dlogitnorm(zz, mu, sigma) * dnorm(mu, mu0, 1) *
+    dunif(sigma, 0, sigma0 + 1)
 }
 
 # running simpsons
@@ -50,12 +58,17 @@ scale <- h1 * h2 * sum(S * lh(xx, yy)) / 9 #compute the integral
 lh.est <- (lh(xx, yy)/scale) # return posterior
 lh.est %>% image()
 
+
+
+
 #convert matrix to paired vectors
 rownames(lh.est) <- x_seq
 colnames(lh.est) <- y_seq
 M = lh.est %>% as.data.frame()
 M["rowid"] = row.names(M)
 arr <- gather(M, colid, value, -rowid)
+
+arr[,1:2] %>% image()
 
 arr <- apply(arr, 2, as.numeric) %>% as.data.frame()
 # These functions come from the 'rethinking' package
@@ -68,16 +81,13 @@ sig.post <- arr[which.max(arr[,3]),2]
 
 curve(dlogitnorm(x, mu.post, sig.post), from=0, to=1, add=T, col='red')
 
+arr %>% arrange(desc(value)) %>% head(10)
 # # Looking at LOG likelihood
-# llh <- function(mu, sigma) {
-#   dlogitnorm(zz, mu, sigma, log = TRUE) + dnorm(zz, mu, 0.1, log = TRUE) +
-#     dunif(zz, 0, sigma + 1, log = TRUE)
-# }
-# 
-# llh.est <- dlogitnorm(zz, mu.est, sigma.est, log = TRUE) +
-#   dnorm(zz, mu.est, 0.1, log = TRUE) +
-#   dunif(zz, 0, 3, log = TRUE)
-# 
-# scale <- h1 * h2 * sum(S * llh(xx, yy)) / 9 #compute the integral
-# exp((llh(xx, yy) / (-scale))) %>% image()
-# 
+llh <- function(mu, sigma) {
+  dlogitnorm(zz, mu, sigma, log = TRUE) + dnorm(mu, mu0, 0.1, log = TRUE) +
+    dunif(sigma, 0, sigma0 + 1, log = TRUE)
+}
+
+scale <- h1 * h2 * sum(S * llh(xx, yy)) / 9 #compute the integral
+exp((llh(xx, yy) / (-scale))) %>% image()
+
