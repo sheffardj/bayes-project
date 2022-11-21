@@ -2,16 +2,16 @@
 zz <- rlogitnorm(1e4, 0.1, 2.1)
 zz %>% hist(., probability=T)
 
-# we assume it is lognormal, so we convert data to normal and get sample params
+# we assume it is logit-normal, so we convert data to normal and get sample params
 mu0 <- logit(zz) %>% mean()
-sigma <- sqrt(logit(zz) %>% var())
+sigma0 <- sqrt(logit(zz) %>% var())
 
 # but we will need vector estimates for the prior for mu, assuming ~ Normal
 sample_mu <- rnorm(1e4, mu0, 0.1)
 sample_mu %>% hist(., probability=T)
 
 # and again for sigma, assuming ~ Uniform
-sample_sigma <- runif(1e4, sigma-1, sigma+1)
+sample_sigma <- runif(1e4, sigma0 - 1, sigma0 + 1)
 sample_sigma %>% hist(., probability=T)
 
 # Take a look the prior distribution with the estimated mu and sigma vectors
@@ -26,8 +26,8 @@ mu.list <- seq(from = mu0 - 0.1,
                to = mu0 + 0.1,
                length.out = 100)
 
-sigma.list <- seq(from = sigma - 0.1,
-                  to = sigma + 0.1,
+sigma.list <- seq(from = sigma0 - 0.1,
+                  to = sigma0 + 0.1,
                   length.out = 100)
 
 # prepare a list of possible mu and sigma
@@ -50,7 +50,7 @@ post$LL <- sapply(1:nrow(post), function(i) {
 # we're in the in the log scale, so we add the priors (also in the log scale!) 
 # to the likelihood. (this is equivalent to multiplying but less rounding error)
 post$prod <- post$LL + dnorm(post$mu, mu0, 0.1, log = TRUE) +
-  dunif(post$sigma, sigma-1, sigma+1, log = TRUE)
+  dunif(post$sigma, sigma0 - 1, sigma0 + 1, log = TRUE)
 
 # Now we want to convert back up to the probability scale, but the naive attempt
 # of 'exp(post$prod)' would send most probabilities to ZERO!
