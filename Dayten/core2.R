@@ -102,25 +102,3 @@ simps_2d <- function(f, ax,bx,nx, ay=ax,by=bx,ny=nx){
   
   h1*h2*sum(S*f(xx,yy))/9 #compute the integral
 }
-
-
-sig <- 0.1
-s_init <- 0
-s_final <- 1
-
-post2 <- function(mu, sigma){
-  dlogitnorm(zz, mu, sigma)* dnorm(zz, mu, sig)* dunif(zz, s_init, s_final)
-}
-
-scale.factor <- simps_2d(post2, 0, 1, 100)
-
-mu.est <- post$mu %>% mean()
-sigma.est <- post$sigma %>% mean()
-
-proportional <- dlogitnorm(zz, mu.est, sigma.est) * dnorm(zz, mu.est, sig) * dunif(zz, s_init, s_final)
-
-prop <- post2(mu0, sigma0) / simps_2d(post2, 0, 1, 100, 1, 3, 100)
-
-
-
-
