@@ -75,3 +75,52 @@ plot(
   pch = 16,
   col = col.alpha(rangi2, 0.1)
 )
+
+
+
+
+
+####
+simps_2d <- function(f, ax,bx,nx, ay=ax,by=bx,ny=nx){
+  #works for rectangular areas of integration
+  #assumes function 'f' takes two arguments
+  
+  n1=2*nx+1 
+  n2=2*ny+1      #number of points, including midway points
+  
+  h1=(bx-ax)/(n1-1)
+  h2=(by-ay)/(n2-1) #length of subdivisions
+  
+  #create the Simpson matrix:
+  s1=c(1,rep(2,n1-2)^(1:(n1-2)%%2 +1) , 1) 
+  s2=c(1,rep(2,n2-2)^(1:(n2-2)%%2 +1) , 1)
+  S=outer(s1,s2)
+  
+  #create the variable matrices
+  xx=matrix(seq(ax,bx,length=n1), nrow=n1, ncol=n2)
+  yy=matrix(seq(ay,by,length=n2), nrow=n1, ncol=n2, byrow=T)
+  
+  h1*h2*sum(S*f(xx,yy))/9 #compute the integral
+}
+
+
+sig <- 0.1
+s_init <- 0
+s_final <- 1
+
+post2 <- function(mu, sigma){
+  dlogitnorm(zz, mu, sigma)* dnorm(zz, mu, sig)* dunif(zz, s_init, s_final)
+}
+
+scale.factor <- simps_2d(post2, 0, 1, 100)
+
+mu.est <- post$mu %>% mean()
+sigma.est <- post$sigma %>% mean()
+
+proportional <- dlogitnorm(zz, mu.est, sigma.est) * dnorm(zz, mu.est, sig) * dunif(zz, s_init, s_final)
+
+prop <- post2(mu0, sigma0) / simps_2d(post2, 0, 1, 100, 1, 3, 100)
+
+
+
+
