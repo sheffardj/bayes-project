@@ -13,11 +13,6 @@ Working with the logit normal we will first calculate the top of the fraction
 ```{r}
 library(logitnorm)
 library(sn)
-dats1 <- rlogitnorm(15000, 0, 3.16)
-dats2 <- rlogitnorm(15000, 0, 1.78)
-dats3 <- rlogitnorm(15000, 0, .32)
-
-
 ```
 
 # the priors 
@@ -38,11 +33,31 @@ sn <- function(d){
 
 
 ```
+
 # funtion to out put the graph and estimates
 ```{r}
-est.calc <- function(dat, prior, s){
-  est <- mean(dlogitnorm(dat, 0, s)*prior)
-  # hist(dlogitnorm(dats, 1,2.7)*dunif(dats,-1,1), probability = T, breaks = 50)
+est.calc <- function(prior, s){
+  dat <- rlogitnorm(15000, 0, s) 
+  
+  simps_three8 <- function(f, a, b, n){
+  # function f
+  # [a,b] interval of integration
+  # n = number of BIG subdivisions (will be multiplied by three to include middle ones)
+  nn = 3*n+1
+  h = (b - a)/n
+  xx <- seq(a, b, length=nn)
+  y = f(xx)
+  
+  h*( y[1] + y[nn] + 3*sum(y[(2:(nn-1))[2:(nn-1)%%3!=1]])  + 2*sum(y[(2:(nn-1))[2:(nn-1)%%3==1]]) )/8
+  }
+  
+  tests <- function (x){
+  dlogitnorm(dat, 0 , x)*prior(dat)
+  } 
+  dnom <- simps_three8(tests, 0,1, 1000) 
+  
+  est <- mean((dlogitnorm(dat, 0, s)*prior(dat))/dnom)
+  
 
   hist(dat, probability = T, ylim = c(0,5))
   curve(dlogitnorm(x, 0, s), col = 'red', add = T)
@@ -50,10 +65,61 @@ est.calc <- function(dat, prior, s){
   print(est)
 }
 
+
+
+
+```
+
+# logitnorm sigma = 3.16
+```{r}
+est.calc( un, 3.16)
+est.calc( nor, 3.16)
+est.calc( bet, 3.16)
+est.calc( sn, 3.16)
+
+```
+
+# logitnorm with sigma = 1.78
+```{r}
+est.calc( un, 1.78)
+est.calc( nor, 1.78)
+est.calc( bet, 1.78)
+est.calc(sn, 1.78)
+```
+
+#logitnorm sigma = .32
+```{r}
+est.calc( un, .32)
+est.calc( nor, .32)
+est.calc( bet, .32)
+est.calc( sn, .32)
+```
+# mu est function 
+```{r}
 est.mu <- function(prior, mu){
   dat <- rlogitnorm(15000, mu, 1) 
-  estm <- mean(dlogitnorm(dat, mu, 1)*prior(dat))
-  # hist(dlogitnorm(dats, 1,2.7)*dunif(dats,-1,1), probability = T, breaks = 50)
+  
+  simps_three8 <- function(f, a, b, n){
+  # function f
+  # [a,b] interval of integration
+  # n = number of BIG subdivisions (will be multiplied by three to include middle ones)
+  nn = 3*n+1
+  h = (b - a)/n
+  xx <- seq(a, b, length=nn)
+  y = f(xx)
+  
+  h*( y[1] + y[nn] + 3*sum(y[(2:(nn-1))[2:(nn-1)%%3!=1]])  + 2*sum(y[(2:(nn-1))[2:(nn-1)%%3==1]]) )/8
+  }
+  
+  tests <- function (x){
+  dlogitnorm(dat, x , 1)*prior(dat)
+  } 
+  dnom <- simps_three8(tests, 0,1, 1000) 
+  
+  estm <- mean(((dlogitnorm(dat, mu, 1)*prior(dat))/dnom))
+  
+  
+  
 
   hist(dat, probability = T, ylim = c(0,5))
   curve(dlogitnorm(x, mu, 1), col = 'red', add = T)
@@ -62,31 +128,7 @@ est.mu <- function(prior, mu){
 }
 
 
-```
 
-# logitnorm sigma = 3.16
-```{r}
-est.calc(dats1, prior = un(dats1), 3.16)
-est.calc(dats1, nor(dats1), 3.16)
-est.calc(dats1, bet(dats1), 3.16)
-est.calc(dats1, sn(dats1), 3.16)
-
-```
-
-# logitnorm with sigma = 1.78
-```{r}
-est.calc(dats2, un(dats2), 1.78)
-est.calc(dats2, nor(dats2), 1.78)
-est.calc(dats2, bet(dats2), 1.78)
-est.calc(dats2, sn(dats2), 1.78)
-```
-
-#logitnorm sigma = .32
-```{r}
-est.calc(dats3, un(dats3), .32)
-est.calc(dats3, nor(dats3), .32)
-est.calc(dats3, bet(dats3), .32)
-est.calc(dats3, sn(dats3), .32)
 ```
 
 # mu = 0
@@ -116,26 +158,6 @@ est.mu( sn,  2)
 
 
 ```{r}
-## Simpson's 3/8 rule
-simps_three8 <- function(f, a, b, n){
-  # function f
-  # [a,b] interval of integration
-  # n = number of BIG subdivisions (will be multiplied by three to include middle ones)
-  nn = 3*n+1
-  h = (b - a)/n
-  xx <- seq(a, b, length=nn)
-  y = f(xx)
-  
-  h*( y[1] + y[nn] + 3*sum(y[(2:(nn-1))[2:(nn-1)%%3!=1]])  + 2*sum(y[(2:(nn-1))[2:(nn-1)%%3==1]]) )/8
-}
-
-tests <- function (x){
-  dlogitnorm(x, 1.15 , 3.16)*dunif(x, -1, 1)
-}  
-
-
-simps_three8(tests, 0,1, 1000)
-
 ```
 
 
