@@ -97,13 +97,13 @@ simps_2d(f2,0,1,100,1,2)
 ### back to our project:
 mu=2; sd=3
 posterior2 <- function(x,y){ #idk what the explanation for this is, im just testing a (2d -> scalar) function here
-  dnorm(x, mu, sd)*dcauchy(x,location=0,scale=1)+
-    dnorm(y, mu, sd)*dcauchy(y,location=0,scale=1)
+  dnorm(mu, x, sd)*dcauchy(mu,location=x,scale=1)+
+    dnorm(mu, y, sd)*dcauchy(mu,location=y,scale=1)
 }
 
 # we use Simpson's rule to integrate it:
-simps_2d(posterior2, 0, 1, 100) #=0.05790762
-simps_2d(posterior2, 0, 1, 100)-2*simps_three8(posterior, 0, 1, 100) #error value(?)
+simps_2d(posterior2, 0, 1, 100) #=0.02425453
+#simps_2d(posterior2, 0, 1, 100)-2*simps_three8(posterior, 0, 1, 100) #error value(?)
 
 
 
