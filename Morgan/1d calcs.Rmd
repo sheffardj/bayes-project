@@ -98,6 +98,7 @@ est.calc( sn, .32)
 # mu est function 
 ```{r}
 est.mu <- function(prior, mu){
+  set.seed(0)
   dat <- rlogitnorm(15000, mu, 1) 
   
   simps_three8 <- function(f, a, b, n){
