@@ -15,7 +15,6 @@ prior_zz %>% hist(., probability=T)
 # data plotted against reality (blue) we want to match
 curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue')
 
-
 # simpsons params
 nx = ny = 50 #number of subdivisions
 n1 = 2 * nx + 1 # length of mu sequence
@@ -64,7 +63,10 @@ contour_xyz(arr$rowid, arr$colid, arr$value)
 image_xyz(arr$rowid, arr$colid, arr$value)
 
 # best pair (close but no cigar)
-arr[which.max(arr[,3]),]
+mu.post <- arr[which.max(arr[,3]),1]
+sig.post <- arr[which.max(arr[,3]),2]
+
+curve(dlogitnorm(x, mu.post, sig.post), from=0, to=1, add=T, col='red')
 
 # # Looking at LOG likelihood
 # llh <- function(mu, sigma) {
