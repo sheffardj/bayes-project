@@ -37,6 +37,7 @@ sn <- function(d){
 # funtion to out put the graph and estimates
 ```{r}
 est.calc <- function(prior, s){
+  set.seed(0)
   dat <- rlogitnorm(15000, 0, s) 
   
   simps_three8 <- function(f, a, b, n){
