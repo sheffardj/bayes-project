@@ -40,25 +40,26 @@ xx=matrix(x_seq, nrow=n1, ncol=n2)
 yy=matrix(y_seq, nrow=n1, ncol=n2, byrow=T)
 
 # our likelihood function
-lh_int <- function(mu, sigma) {
+lh <- function(mu, sigma) {
   LL_obs <- mapply(dlogitnorm, mu=mu, sigma=sigma, MoreArgs = list(x=zz), SIMPLIFY = T)
   LL_mat <- matrix(apply(LL_obs, 2, prod), nrow=dim(mu)[1], ncol=dim(sigma)[2])
   LL_mat * dnorm(mu, 1, 0.1) *
     dunif(sigma, 0, 3)
 }
 
-lh <- function(param){
-  ll_prod <- rep(1,length(param))
-  for (i in 1:length(param)) {
-    ll_prod = ll_prod*(dlogitnorm(zz, param[i,1], param[i,2])) * dnorm(param[i,1], 1, 0.1) *
-      dunif(param[i,2], 0, 3)
-  }
-  ll_prod
-}
+# lh <- function(param){
+#   ll_prod <- rep(1,length(param))
+#   for (i in 1:length(param)) {
+#     ll_prod = ll_prod*(dlogitnorm(zz, param[i,1], param[i,2])) * dnorm(param[i,1], 1, 0.1) *
+#       dunif(param[i,2], 0, 3)
+#   }
+#   ll_prod
+# }
 
 # running simpsons
-scale <- h1 * h2 * sum(S * lh_int(xx, yy)) / 9 #compute the integral
-lh.est <- ((lh(expand.grid(x_seq,y_seq)))/scale) # return posterior
+scale <- h1 * h2 * sum(S * lh(xx, yy)) / 9 #compute the integral
+lh.est <- lh(xx,yy)/scale # return posterior
+#lh.est <- lh(expand.grid(x_seq,y_seq))/scale # return posterior
 lh.est %>% image()
 
 #convert matrix to paired vectors
