@@ -2,7 +2,6 @@ library(tidyr)
 library(rethinking)
 source("seed.R")
 # data that we're "given"
-dev.off()
 zz <- rlogitnorm(1000, 0.1, 2.1)
 zz %>% hist(., probability=T, ylim=c(0,1.9))
 
@@ -53,6 +52,15 @@ lh2 <- function(mu, sigma) {
     dnorm(sigma, sigma0, 3)
 }
 
+lh3 <- function(mu, sigma) {
+  LL_obs <- mapply(dlogitnorm, mu=mu, sigma=sigma, MoreArgs = list(x=zz), SIMPLIFY = T)
+  LL_mat <- matrix(apply(LL_obs, 2, prod), nrow=dim(mu)[1], ncol=dim(sigma)[2])
+  LL_mat * dexp(mu, 1/mu0) *
+    dnorm(sigma, sigma0, 3)
+}
+
+estimates <- matrix(NA, nrow=0, ncol=3)
+colnames(estimates) <- c('lh', 'mu.est', 'sigma.est')
 
 estimate <- function(lh){
   func <- as.character(substitute(lh))
@@ -72,14 +80,17 @@ estimate <- function(lh){
   arr <- gather(M, colid, value, -rowid)
   
   arr <- apply(arr, 2, as.numeric) %>% as.data.frame()
-  # These functions come from the 'rethinking' package
-  layout(mat = matrix(c(1, 3, 2, 3), 
-                      nrow = 2, 
+  arr <- arr %>% arrange(rowid, colid)
+  
+  
+  # plot layout
+  layout(mat = matrix(c(1, 3, 2, 3),
+                      nrow = 2,
                       ncol = 2),
-         heights = c(1, 1),    # Heights of the two rows
-         widths = c(1, 1))     # Widths of the two columns
-  
-  
+         heights = c(1, 1),
+         widths = c(1, 1))
+
+  # These functions come from the 'rethinking' package
   contour_xyz(arr$rowid, arr$colid, arr$value, main=paste("Likelihood", func))
   image_xyz(arr$rowid, arr$colid, arr$value)
   
@@ -91,6 +102,22 @@ estimate <- function(lh){
   curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue')
   curve(dlogitnorm(x, mu.post, sig.post), from=0, to=1, add=T, col='red')
   print(paste(mu.post, sig.post))
+  estimates <- rbind(estimates, c(func, mu.post, sig.post))
+  
+  
+  # fig <- plot_ly(z = ~ lh.est) %>% add_surface(contours = list(
+  #   z = list(
+  #     show = TRUE,
+  #     usecolormap = TRUE,
+  #     highlightcolor = "#ff0000",
+  #     project = list(z = TRUE)
+  #   )
+  # ),
+  # opacity = 0.6) %>% layout(scene = list(camera = list(eye = list(
+  #   x = 1.87, y = 0.88, z = -0.64
+  # ))))
+
+  # htmlwidgets::saveWidget(widget = fig, file=paste0(func,".html"), selfcontained=TRUE)
 }
 
 
