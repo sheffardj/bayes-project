@@ -1,7 +1,8 @@
 library(tidyr)
 
+source("seed.R")
 # data that we're "given"
-zz <- rlogitnorm(200, 0.1, 2.1)
+zz <- rlogitnorm(1000, 0.1, 2.1)
 zz %>% hist(., probability=T)
 
 # we assume it is logit-normal, so we convert data to normal and get sample params
@@ -16,7 +17,7 @@ sigma0 <- sqrt(logit(zz) %>% var())
 curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue')
 
 # simpsons params
-nx = ny = 101 #number of subdivisions
+nx = ny = 100 #number of subdivisions
 n1 = 2 * nx + 1 # length of mu sequence
 n2 = 2 * ny + 1 # length of sigma sequence
 ax = mu0 - 0.1 # range for mu
@@ -47,6 +48,14 @@ lh <- function(mu, sigma) {
     dunif(sigma, 0, 3)
 }
 
+# ll_mat <- 1;
+# for (i in 1:length(zz)) {
+#   ll_mat = ll_mat*dnorm(zz[i], xx, yy)
+# }
+# ll_mat <- ll_mat*dnorm(xx,1,0.1)*dunif(yy,0,3)
+# ll_scaled <- ll_mat / (h1 * h2 * sum(S * ll_mat) / 9)
+# persp(x_seq, y_seq,z = ll_scaled)
+
 # lh <- function(param){
 #   ll_prod <- rep(1,length(param))
 #   for (i in 1:length(param)) {
@@ -57,8 +66,9 @@ lh <- function(mu, sigma) {
 # }
 
 # running simpsons
-scale <- h1 * h2 * sum(S * lh(xx, yy)) / 9 #compute the integral
-lh.est <- lh(xx,yy)/scale # return posterior
+LH.MAT <- lh(xx, yy)
+scale <- h1 * h2 * sum(S * LH.MAT) / 9 #compute the integral
+lh.est <- LH.MAT/scale # return posterior
 #lh.est <- lh(expand.grid(x_seq,y_seq))/scale # return posterior
 lh.est %>% image()
 
