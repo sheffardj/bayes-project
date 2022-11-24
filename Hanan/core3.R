@@ -3,7 +3,7 @@ library(tidyr)
 source("seed.R")
 # data that we're "given"
 zz <- rlogitnorm(1000, 0.1, 2.1)
-zz %>% hist(., probability=T)
+zz %>% hist(., probability=T, ylim=c(0,2))
 
 # we assume it is logit-normal, so we convert data to normal and get sample params
 mu0 <- logit(zz) %>% mean()
@@ -14,7 +14,7 @@ sigma0 <- sqrt(logit(zz) %>% var())
 #prior_zz %>% hist(., probability=T)
 
 # data plotted against reality (blue) we want to match
-curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue')
+curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue',n=301)
 
 # simpsons params
 nx = ny = 100 #number of subdivisions
@@ -45,7 +45,7 @@ lh <- function(mu, sigma) {
   LL_obs <- mapply(dlogitnorm, mu=mu, sigma=sigma, MoreArgs = list(x=zz), SIMPLIFY = T)
   LL_mat <- matrix(apply(LL_obs, 2, prod), nrow=dim(mu)[1], ncol=dim(sigma)[2])
   LL_mat * dnorm(mu, 1, 0.1) *
-    dunif(sigma, 0, 3)
+    dunif(sigma, 1, 3)
 }
 
 # ll_mat <- 1;
@@ -88,7 +88,8 @@ image_xyz(arr$rowid, arr$colid, arr$value)
 mu.post <- arr[which.max(arr[,3]),1]
 sig.post <- arr[which.max(arr[,3]),2]
 
-curve(dlogitnorm(x, mu.post, sig.post), from=0, to=1, add=T, col='red')
+zz %>% hist(., probability=T, ylim = c(0,2))
+curve(dlogitnorm(x, mu.post, sig.post), from=0, to=1, add=T, col='red', n=301)
 
 # # Looking at LOG likelihood
 # llh <- function(mu, sigma) {
