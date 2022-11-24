@@ -13,6 +13,7 @@ Working with the logit normal we will first calculate the top of the fraction
 ```{r}
 library(logitnorm)
 library(sn)
+library(dplyr)
 ```
 
 # the priors 
@@ -57,7 +58,9 @@ est.calc <- function(prior, s){
   } 
   dnom <- simps_three8(tests, 0,1, 1000) 
   
-  est <- mean((dlogitnorm(dat, 0, s)*prior(dat))/dnom)
+  sigma0 <- var(dat)
+
+  est <- mean((dlogitnorm(dat, 0, s)*prior(sigma0))/dnom)
   
 
   hist(dat, probability = T, ylim = c(0,5))
@@ -117,8 +120,8 @@ est.mu <- function(prior, mu){
   dlogitnorm(dat, x , 1)*prior(dat)
   } 
   dnom <- simps_three8(tests, 0,1, 1000) 
-  
-  estm <- mean(((dlogitnorm(dat, mu, 1)*prior(dat))/dnom))
+  mu0 <- mean(dat)
+  estm <- mean(((dlogitnorm(dat, mu, 1)*prior(mu0))/dnom))
   
   
   
