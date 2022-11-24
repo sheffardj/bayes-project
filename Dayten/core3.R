@@ -2,7 +2,8 @@ library(tidyr)
 library(rethinking)
 source("seed.R")
 # data that we're "given"
-zz <- rlogitnorm(1000, 0.1, 2.1)
+n <- 1000
+zz <- rlogitnorm(n, 0.1, 2.1)
 zz %>% hist(., probability=T, ylim=c(0,1.9))
 
 # data plotted against reality (blue) we want to match
@@ -59,9 +60,6 @@ lh3 <- function(mu, sigma) {
     dnorm(sigma, sigma0, 3)
 }
 
-estimates <- matrix(NA, nrow=0, ncol=3)
-colnames(estimates) <- c('lh', 'mu.est', 'sigma.est')
-
 estimate <- function(lh){
   func <- as.character(substitute(lh))
   print(paste('func is', func))
@@ -102,9 +100,13 @@ estimate <- function(lh){
   curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue')
   curve(dlogitnorm(x, mu.post, sig.post), from=0, to=1, add=T, col='red')
   print(paste(mu.post, sig.post))
-  estimates <- rbind(estimates, c(func, mu.post, sig.post))
   
   
+  assign("estimates", rbind(estimates, c(
+    func = func,
+    mu.post = mu.post,
+    sig.post =  sig.post
+  )), envir = .GlobalEnv)
   # fig <- plot_ly(z = ~ lh.est) %>% add_surface(contours = list(
   #   z = list(
   #     show = TRUE,
@@ -120,6 +122,37 @@ estimate <- function(lh){
   # htmlwidgets::saveWidget(widget = fig, file=paste0(func,".html"), selfcontained=TRUE)
 }
 
+# setup a storage matrix to store many Bayesian estimates
+estimates <- matrix(NA, nrow=0, ncol=3) %>% as.data.frame()
+colnames(estimates) <- c('lh', 'mu.post', 'sigma.post')
 
+# estimate posterior, create plots, store estimates
 estimate(lh1)
 estimate(lh2)
+
+# need to convert to numeric values
+estimates <- estimates %>% mutate_at(c('mu.post', 'sigma.post'), as.numeric)
+
+# > estimates
+# lh    mu.post sigma.post
+# 1 lh1 0.11821886   2.059281
+# 2 lh2 0.08321886   2.059281
+
+# we generate samples from our estimates
+sample1 <- rlogitnorm(n, estimates[1,2],  estimates[1,3])
+sample2 <- rlogitnorm(n, estimates[2,2],  estimates[2,3])
+
+# store in matrix to compare with original logitnorm dat
+dat1 <- rbind(zz/sum(zz),sample1/sum(sample1))
+dat2 <- rbind(zz/sum(zz),sample2/sum(sample2))
+
+# install.packages('philentropy')
+library(philentropy)
+
+KL(dat1) # kullback-leibler = 0.871625 
+KL(dat2) # kullback-leibler = 0.8939065 
+
+zz %>% hist(., probability=T, ylim=c(0,2.5))
+curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue')
+curve(dlogitnorm(x, estimates[1,2],  estimates[1,3]), from=0, to=1, add=T, col='red')
+curve(dlogitnorm(x, estimates[2,2],  estimates[2,3]), from=0, to=1, add=T, col='green')
