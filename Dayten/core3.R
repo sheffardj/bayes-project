@@ -13,6 +13,13 @@ curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue')
 mu0 <- logit(zz) %>% mean()
 sigma0 <- sqrt(logit(zz) %>% var())
 
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+getmode(logit(zz))
+
 
 # simpsons params
 nx = ny = 100 #number of subdivisions
@@ -79,6 +86,7 @@ estimate <- function(lh){
   
   arr <- apply(arr, 2, as.numeric) %>% as.data.frame()
   arr <- arr %>% arrange(rowid, colid)
+  colnames(arr) <- c("mu", "sigma", "prob")
   
   
   # plot layout
@@ -89,8 +97,8 @@ estimate <- function(lh){
          widths = c(1, 1))
 
   # These functions come from the 'rethinking' package
-  contour_xyz(arr$rowid, arr$colid, arr$value, main=paste("Likelihood", func))
-  image_xyz(arr$rowid, arr$colid, arr$value)
+  contour_xyz(arr$mu, arr$sigma, arr$prob, main=paste("Likelihood", func))
+  image_xyz(arr$mu, arr$sigma, arr$prob)
   
   # best pair (close but no cigar)
   mu.post <- arr[which.max(arr[,3]),1]
@@ -153,6 +161,36 @@ KL(dat1) # kullback-leibler = 0.871625
 KL(dat2) # kullback-leibler = 0.8939065 
 
 zz %>% hist(., probability=T, ylim=c(0,2.5))
-curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue')
-curve(dlogitnorm(x, estimates[1,2],  estimates[1,3]), from=0, to=1, add=T, col='red')
-curve(dlogitnorm(x, estimates[2,2],  estimates[2,3]), from=0, to=1, add=T, col='green')
+curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue', n=300)
+curve(dlogitnorm(x, estimates[1,2],  estimates[1,3]), from=0, to=1, add=T, col='red', n=300)
+curve(dlogitnorm(x, estimates[2,2],  estimates[2,3]), from=0, to=1, add=T, col='green', n=300)
+
+
+# install.packages('bayestestR')
+library(bayestestR)
+
+# an alternative visualization
+sample.rows <-sample(1:nrow(arr),size=1e4,replace=TRUE,
+                     prob=arr$prob )
+sample.mu <-arr$mu[sample.rows]
+sample.sigma <-arr$sigma[sample.rows]
+plot(
+  sample.mu,
+  sample.sigma,
+  cex = 0.5,
+  pch = 16,
+  col = col.alpha(rangi2, 0.1)
+)
+
+post <- tibble(sample.mu,
+               sample.sigma)
+
+describe_posterior(
+  post,
+  centrality = "median",
+  test = c("p_direction", "p_significance")
+)
+
+ggplot(post, aes(x=sample.mu, y=sample.sigma)) +
+  geom_density_2d(size=1) +
+  geom_point(size=0.1)
