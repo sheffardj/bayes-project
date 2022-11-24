@@ -1,36 +1,27 @@
 library(tidyr)
-
+library(rethinking)
+source("seed.R")
 # data that we're "given"
-zz <- rlogitnorm(1e4, 0.1, 2.1)
-zz %>% hist(., probability=T)
+dev.off()
+zz <- rlogitnorm(1000, 0.1, 2.1)
+zz %>% hist(., probability=T, ylim=c(0,1.9))
+
+# data plotted against reality (blue) we want to match
+curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue')
 
 # we assume it is logit-normal, so we convert data to normal and get sample params
 mu0 <- logit(zz) %>% mean()
 sigma0 <- sqrt(logit(zz) %>% var())
 
-# but we will need vector estimates for the prior for mu, assuming ~ Normal
-sample_mu <- rnorm(1e4, mu0, 0.1)
-sample_mu %>% hist(., probability=T)
-
-# and again for sigma, assuming ~ Uniform
-sample_sigma <- runif(1e4, sigma0 - 1, sigma0 + 1)
-sample_sigma %>% hist(., probability=T)
-
-# Take a look the prior distribution with the estimated mu and sigma vectors
-prior_zz <- rlogitnorm(1e4, sample_mu, sample_sigma)
-prior_zz %>% hist(., probability=T)
-
-# data plotted against reality (blue) we want to match
-curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue')
 
 # simpsons params
-nx = ny = 1000 #number of subdivisions
+nx = ny = 100 #number of subdivisions
 n1 = 2 * nx + 1 # length of mu sequence
 n2 = 2 * ny + 1 # length of sigma sequence
-ax = mu0 - 2 # range for mu
-bx = mu0 + 2
-ay = sigma0 - 2 # range for sigma
-by = sigma0 + 2
+ax = mu0 - 0.5 # range for mu
+bx = mu0 + 0.5
+ay = sigma0 - 0.5 # range for sigma
+by = sigma0 + 0.5
 h1 = (bx - ax) / (n1 - 1)  #length of subdivisions
 h2 = (by - ay) / (n2 - 1)
 
@@ -47,47 +38,61 @@ y_seq <- seq(ay,by,length=n2)
 xx=matrix(x_seq, nrow=n1, ncol=n2)
 yy=matrix(y_seq, nrow=n1, ncol=n2, byrow=T)
 
-# our likelihood function
-lh <- function(mu, sigma) {
-  dlogitnorm(zz, mu, sigma) * dnorm(mu, mu0, 1) *
-    dunif(sigma, 0, sigma0 + 1)
+# our likelihood functions
+lh1 <- function(mu, sigma) {
+  LL_obs <- mapply(dlogitnorm, mu=mu, sigma=sigma, MoreArgs = list(x=zz), SIMPLIFY = T)
+  LL_mat <- matrix(apply(LL_obs, 2, prod), nrow=dim(mu)[1], ncol=dim(sigma)[2])
+  LL_mat * dnorm(mu, mu0, 1) *
+    dunif(sigma, 0, 3)
 }
 
-# running simpsons
-scale <- h1 * h2 * sum(S * lh(xx, yy)) / 9 #compute the integral
-lh.est <- (lh(xx, yy)/scale) # return posterior
-lh.est %>% image()
-
-
-
-
-#convert matrix to paired vectors
-rownames(lh.est) <- x_seq
-colnames(lh.est) <- y_seq
-M = lh.est %>% as.data.frame()
-M["rowid"] = row.names(M)
-arr <- gather(M, colid, value, -rowid)
-
-arr[,1:2] %>% image()
-
-arr <- apply(arr, 2, as.numeric) %>% as.data.frame()
-# These functions come from the 'rethinking' package
-contour_xyz(arr$rowid, arr$colid, arr$value)
-image_xyz(arr$rowid, arr$colid, arr$value)
-
-# best pair (close but no cigar)
-mu.post <- arr[which.max(arr[,3]),1]
-sig.post <- arr[which.max(arr[,3]),2]
-
-curve(dlogitnorm(x, mu.post, sig.post), from=0, to=1, add=T, col='red')
-
-arr %>% arrange(desc(value)) %>% head(10)
-# # Looking at LOG likelihood
-llh <- function(mu, sigma) {
-  dlogitnorm(zz, mu, sigma, log = TRUE) + dnorm(mu, mu0, 0.1, log = TRUE) +
-    dunif(sigma, 0, sigma0 + 1, log = TRUE)
+lh2 <- function(mu, sigma) {
+  LL_obs <- mapply(dlogitnorm, mu=mu, sigma=sigma, MoreArgs = list(x=zz), SIMPLIFY = T)
+  LL_mat <- matrix(apply(LL_obs, 2, prod), nrow=dim(mu)[1], ncol=dim(sigma)[2])
+  LL_mat * dexp(mu, 1/mu0) *
+    dnorm(sigma, sigma0, 3)
 }
 
-scale <- h1 * h2 * sum(S * llh(xx, yy)) / 9 #compute the integral
-exp((llh(xx, yy) / (-scale))) %>% image()
 
+estimate <- function(lh){
+  func <- as.character(substitute(lh))
+  print(paste('func is', func))
+  
+  # running simpsons
+  LH.MAT <- lh(xx, yy)
+  scale <- h1 * h2 * sum(S * LH.MAT) / 9 #compute the integral
+  lh.est <- LH.MAT/scale # return posterior
+  
+  
+  #convert matrix to paired vectors
+  rownames(lh.est) <- x_seq
+  colnames(lh.est) <- y_seq
+  M = lh.est %>% as.data.frame()
+  M["rowid"] = row.names(M)
+  arr <- gather(M, colid, value, -rowid)
+  
+  arr <- apply(arr, 2, as.numeric) %>% as.data.frame()
+  # These functions come from the 'rethinking' package
+  layout(mat = matrix(c(1, 3, 2, 3), 
+                      nrow = 2, 
+                      ncol = 2),
+         heights = c(1, 1),    # Heights of the two rows
+         widths = c(1, 1))     # Widths of the two columns
+  
+  
+  contour_xyz(arr$rowid, arr$colid, arr$value, main=paste("Likelihood", func))
+  image_xyz(arr$rowid, arr$colid, arr$value)
+  
+  # best pair (close but no cigar)
+  mu.post <- arr[which.max(arr[,3]),1]
+  sig.post <- arr[which.max(arr[,3]),2]
+  
+  zz %>% hist(., probability=T, ylim=c(0,2.5))
+  curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue')
+  curve(dlogitnorm(x, mu.post, sig.post), from=0, to=1, add=T, col='red')
+  print(paste(mu.post, sig.post))
+}
+
+
+estimate(lh1)
+estimate(lh2)
