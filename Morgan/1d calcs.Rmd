@@ -14,6 +14,8 @@ Working with the logit normal we will first calculate the top of the fraction
 library(logitnorm)
 library(sn)
 library(dplyr)
+library(philentropy)
+library(bayestestR)
 ```
 
 # the priors 
@@ -56,17 +58,27 @@ est.calc <- function(prior, s){
   tests <- function (x){
   dlogitnorm(dat, 0 , x)*prior(dat)
   } 
+  
   dnom <- simps_three8(tests, 0,1, 1000) 
   
   sigma0 <- var(dat)
 
   est <- mean((dlogitnorm(dat, 0, s)*prior(sigma0))/dnom)
   
-
+  #KL Divergence
+  samp <- rlogitnorm(15000, 0,  est)
+  mat <- rbind(dat/sum(dat), samp/sum(samp))
+  div <- KL(mat)
+  
+  #CI
+  c <- ci(samp, ci = .95, method = 'HDI', verbose =F)
+  
+  #plots
   hist(dat, probability = T, ylim = c(0,5))
   curve(dlogitnorm(x, 0, s), col = 'red', add = T)
   curve(dlogitnorm(x, 0, est), col ='blue', add = T)
-  print(est)
+  
+  return(cbind(est, div, c))
 }
 
 
@@ -121,15 +133,22 @@ est.mu <- function(prior, mu){
   } 
   dnom <- simps_three8(tests, 0,1, 1000) 
   mu0 <- mean(dat)
+  
   estm <- mean(((dlogitnorm(dat, mu, 1)*prior(mu0))/dnom))
   
+   #KL Divergence
+  samp <- rlogitnorm(15000, estm,  1)
+  mat <- rbind(dat/sum(dat), samp/sum(samp))
+  div <- KL(mat)
   
+  #CI
+  c <- ci(samp, ci = .95, method = 'HDI', verbose =F)
   
 
   hist(dat, probability = T, ylim = c(0,5))
   curve(dlogitnorm(x, mu, 1), col = 'red', add = T)
   curve(dlogitnorm(x, estm, 1), col ='blue', add = T)
-  print(estm)
+  return(cbind(estm, div, c))
 }
 
 
