@@ -1,13 +1,11 @@
-library(tidyr)
-library(rethinking)
 source("seed.R")
 # data that we're "given"
 n <- 1000
-zz <- rlogitnorm(n, 0.1, 2.1)
+zz <- rlogitnorm(n, 0, 3.16)
 zz %>% hist(., probability=T, ylim=c(0,1.9))
 
 # data plotted against reality (blue) we want to match
-curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue')
+curve(dlogitnorm(x, 0, 3.6), from=0, to=1, add=T, col='blue')
 
 # we assume it is logit-normal, so we convert data to normal and get sample params
 mu0 <- logit(zz) %>% mean()
@@ -29,21 +27,21 @@ ax = mu0 - 0.5 # range for mu
 bx = mu0 + 0.5
 ay = sigma0 - 0.5 # range for sigma
 by = sigma0 + 0.5
-h1 = (bx - ax) / (n1 - 1)  #length of subdivisions
-h2 = (by - ay) / (n2 - 1)
+h1 <<- (bx - ax) / (n1 - 1)  #length of subdivisions
+h2 <<- (by - ay) / (n2 - 1)
 
 #create the Simpson matrix:
 s1 = c(1, rep(2, n1 - 2) ^ (1:(n1 - 2) %% 2 + 1) , 1)
 s2 = c(1, rep(2, n2 - 2) ^ (1:(n2 - 2) %% 2 + 1) , 1)
-S = outer(s1, s2)
+S <<- outer(s1, s2)
 
 # set out the sequences (used elsewhere)
 x_seq <- seq(ax,bx,length=n1)
 y_seq <- seq(ay,by,length=n2)
 
 # create the variable matrices
-xx=matrix(x_seq, nrow=n1, ncol=n2)
-yy=matrix(y_seq, nrow=n1, ncol=n2, byrow=T)
+xx <<- matrix(x_seq, nrow=n1, ncol=n2)
+yy <<- matrix(y_seq, nrow=n1, ncol=n2, byrow=T)
 
 # our likelihood functions
 lh1 <- function(mu, sigma) {
@@ -104,10 +102,12 @@ estimate <- function(lh){
   mu.post <- arr[which.max(arr[,3]),1]
   sig.post <- arr[which.max(arr[,3]),2]
   
-  zz %>% hist(., probability=T, ylim=c(0,2.5))
-  curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue')
+  zz %>% hist(., probability=T, ylim=c(0,4))
+  curve(dlogitnorm(x, 0, 3.16), from=0, to=1, add=T, col='blue')
   curve(dlogitnorm(x, mu.post, sig.post), from=0, to=1, add=T, col='red')
   print(paste(mu.post, sig.post))
+  
+  
   
   
   assign("estimates", rbind(estimates, c(
@@ -154,20 +154,13 @@ sample2 <- rlogitnorm(n, estimates[2,2],  estimates[2,3])
 dat1 <- rbind(zz/sum(zz),sample1/sum(sample1))
 dat2 <- rbind(zz/sum(zz),sample2/sum(sample2))
 
-# install.packages('philentropy')
-library(philentropy)
-
 KL(dat1) # kullback-leibler = 0.871625 
 KL(dat2) # kullback-leibler = 0.8939065 
 
 zz %>% hist(., probability=T, ylim=c(0,2.5))
-curve(dlogitnorm(x, 0.1, 2.1), from=0, to=1, add=T, col='blue', n=300)
+curve(dlogitnorm(x, 0, 3.6), from=0, to=1, add=T, col='blue', n=300)
 curve(dlogitnorm(x, estimates[1,2],  estimates[1,3]), from=0, to=1, add=T, col='red', n=300)
 curve(dlogitnorm(x, estimates[2,2],  estimates[2,3]), from=0, to=1, add=T, col='green', n=300)
-
-
-# install.packages('bayestestR')
-library(bayestestR)
 
 # an alternative visualization
 sample.rows <-sample(1:nrow(arr),size=1e4,replace=TRUE,
@@ -187,7 +180,7 @@ post <- tibble(sample.mu,
 
 describe_posterior(
   post,
-  centrality = "median",
+  centrality = "MAP",
   test = c("p_direction", "p_significance")
 )
 
