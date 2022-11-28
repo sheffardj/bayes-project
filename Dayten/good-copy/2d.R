@@ -53,8 +53,22 @@ estimates <- estimates %>%
 
 estimates
 
+estimates$kl <- NA
+estimates$map_mu <- NA
+estimates$map_sig <- NA
+estimates$mu_low <- NA
+estimates$mu_hi <- NA
+estimates$sig_low <- NA
+estimates$sig_hi <- NA
+estimates$pd_mu <- NA
+estimates$ps_mu <- NA
+estimates$pd_sig <- NA
+estimates$ps_sig <- NA
+
+
 end <- Sys.time()
 end - start
+
 
 
 if(0){
@@ -99,3 +113,48 @@ for(ii in 1:9){
    image_xyz(tmp$mu, tmp$sigma, tmp$prob, main=paste("Likelihood", ii))
 }
 }
+
+for(ii in 1:dim(estimates)[1]){
+  mu.post <- estimates[ii,"mu.post"]
+  sigma.post <- estimates[ii,"sigma.post"]
+  
+  # generate samples from our estimates
+  samp <- rlogitnorm(n, mu.post,  sigma.post)
+  
+  # store in matrix to compare with original logitnorm dat
+  tmp <- rbind(og_data/sum(og_data),samp/sum(samp))
+  
+  KL(tmp) # kullback-leibler = 0.8939065 
+  estimates[ii,"kl"] <- KL(tmp)
+  arr0 <- arr[, (3 * ii - 2):(3 * ii)]
+  
+  sample.rows <-sample(1:nrow(arr0),size=1e3,replace=TRUE,
+                       prob=arr0$prob )
+  sample.mu <-arr0$mu[sample.rows]
+  sample.sigma <-arr0$sigma[sample.rows]
+  
+  post <- tibble(sample.mu,
+                 sample.sigma)
+  
+  CI <- describe_posterior(
+    post,
+    centrality = "MAP",
+    test = c("p_direction", "p_significance")
+  )
+  
+  estimates[ii,'map_mu'] <- CI$MAP[1]
+  estimates[ii,'map_sig'] <- CI$MAP[2]
+  estimates[ii,'mu_low'] <- CI$CI_low[1]
+  estimates[ii,'mu_hi'] <-  CI$CI_high[2]
+  estimates[ii,'sig_low'] <-  CI$CI_low[2]
+  estimates[ii,'sig_hi'] <-  CI$CI_high[2]
+  estimates[ii,'pd_mu'] <- CI$pd[1]
+  estimates[ii,'ps_mu'] <- CI$ps[1]
+  estimates[ii,'pd_sig'] <- CI$pd[2]
+  estimates[ii,'ps_sig'] <- CI$ps[2]
+}
+
+estimates %>% as.data.frame() %>%  arrange(kl)
+beep(sound = 2) # alert to alg completion
+
+fwrite(estimates, file='estimates.csv')
