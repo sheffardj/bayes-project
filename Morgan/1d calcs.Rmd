@@ -73,7 +73,8 @@ est.calc <- function(prior, s){
   div <- KL(mat)
   
   #CI
-  c <- ci(samp, ci = .95, method = 'HDI', verbose =F)
+  simp <- rlogitnorm(15000, 0, est)
+  c <- ci(simp, ci = .95, method = 'HDI', verbose =F)
   
   #plots
   hist(dat, probability = T, ylim = c(0,5))
@@ -155,7 +156,8 @@ est.mu <- function(prior, mu){
   div <- KL(mat )
   
   #CI
-  c <- ci(samp, ci = .95, method = 'HDI', verbose =F)
+  simp <-rlogitnorm(15000, estm,1)
+  c <- ci(simp, ci = .95, method = 'HDI', verbose =F)
   
 
   hist(dat, probability = T, ylim = c(0,5))
