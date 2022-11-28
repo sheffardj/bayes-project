@@ -16,7 +16,8 @@ library(sn)
 library(dplyr)
 library(philentropy)
 library(bayestestR)
-
+library(ggplot2)
+library(ggpubr)
 ```
 
 # the priors 
@@ -40,7 +41,7 @@ sn <- function(d){
 
 # funtion to out put the graph and estimates
 ```{r}
-est.calc <- function(prior, s){
+est.calc <- function(prior, s, u,t){
   set.seed(0)
   dat <- rlogitnorm(15000, 0, s) 
   
@@ -79,11 +80,36 @@ est.calc <- function(prior, s){
   c <- ci(simp, ci = .95, method = 'HDI', verbose =F)
   
   #plots
-  hist(dat, probability = T, ylim = c(0,5))
-  curve(dlogitnorm(x, 0, s), col = 'red', add = T)
-  curve(dlogitnorm(x, 0, est), col ='blue', add = T)
+  # hist(dat, probability = T, ylim = c(0,5))
+  # curve(dlogitnorm(x, 0, s), col = 'red', add = T)
+  # curve(dlogitnorm(x, 0, est), col ='blue', add = T)
   
-  return(cbind(est, div, c))
+ex <- matrix(dat, ncol=1)
+
+colnames(ex) <- "x"
+
+g <-ggplot(as.data.frame(ex), aes(x=x)) + 
+  geom_histogram(aes(y=..density..)) +
+  stat_function( # orignal params
+    fun = dlogitnorm,
+    geom = "line",
+    color= 'skyblue3',
+    n=300,
+    args = list(mu = 0, sigma = s)
+  ) + 
+  stat_function( # estimated params
+    fun = dlogitnorm,
+    geom = "line",
+    color= 'darkgoldenrod1',
+    n=300,
+    args = list(mu = 0, sigma = est)
+  ) + ylim(0,u) + ggtitle(t)
+  
+  
+  
+  
+  # return(cbind(est,div,c)) # uncomment if you want to estimates
+  return(g)
 }
 
 
@@ -93,30 +119,34 @@ est.calc <- function(prior, s){
 
 # logitnorm sigma = 3.16
 ```{r}
-s1 <- est.calc( un, 3.16)
-s2 <-est.calc( nor, 3.16)
+
+s1<- est.calc( un, 3.16, 5, 'unif')
+ s2<-est.calc( nor, 3.16,5, 'norm')
 # s3<- est.calc( bet, 3.16)
-s4<- est.calc( sn, 3.16)
+ s4<-est.calc( sn, 3.16, 5,'skewnorm')
 
 
-
+ggarrange(s1,s2,s4, ncol = 2,nrow = 2)
 
 ```
 
 # logitnorm with sigma = 1.78
 ```{r}
-s5<-est.calc( un, 1.78)
-s6<-est.calc( nor, 1.78)
+s5<-est.calc( un, 1.78,2, 'unif')
+s6<-est.calc( nor, 1.78, 2, 'norm')
 # s7<-est.calc( bet, 1.78)
-s8<-est.calc(sn, 1.78)
+s8<-est.calc(sn, 1.78, 2, 'skewnorm')
+ggarrange(s5,s6,s8, ncol = 2,nrow = 2)
 ```
 
 #logitnorm sigma = .32
 ```{r}
-s9<-est.calc( un, .32)
-s10<-est.calc( nor, .32)
+
+s9<-est.calc( un, .32, 5, 'unif')
+s10<-est.calc( nor, .32, 5,'norm')
 # s11<-est.calc( bet, .32)
-s12<-est.calc( sn, .32)
+s12<-est.calc( sn, .32, 5, 'skewnrom')
+ggarrange(s9,s10,s12, ncol = 2,nrow = 2)
 ```
 
 ```{r}
@@ -127,7 +157,7 @@ sigma <- data.frame(rbind(s1,s2,s4,s5,s6,s8,s9,s10,s12))
 
 # mu est function 
 ```{r}
-est.mu <- function(prior, mu){
+est.mu <- function(prior, mu,u, t){
   set.seed(0)
   dat <- rlogitnorm(15000, mu, 1) 
   
@@ -164,10 +194,33 @@ est.mu <- function(prior, mu){
   c <- ci(simp, ci = .95, method = 'HDI', verbose =F)
   
 
-  hist(dat, probability = T, ylim = c(0,5))
-  curve(dlogitnorm(x, mu, 1), col = 'red', add = T)
-  curve(dlogitnorm(x, estm, 1), col ='blue', add = T)
-  return(cbind(estm, div, c))
+  ex <- matrix(dat, ncol=1)
+
+colnames(ex) <- "x"
+
+g <-ggplot(as.data.frame(ex), aes(x=x)) + 
+  geom_histogram(aes(y=..density..)) +
+  stat_function( # orignal params
+    fun = dlogitnorm,
+    geom = "line",
+    color= 'skyblue3',
+    n=300,
+    args = list(mu = mu, sigma = 1)
+  ) + 
+  stat_function( # estimated params
+    fun = dlogitnorm,
+    geom = "line",
+    color= 'darkgoldenrod1',
+    n=300,
+    args = list(mu = estm, sigma = 1)
+  ) + ylim(0,u) +ggtitle(t)
+  
+  
+  # hist(dat, probability = T, ylim = c(0,5))
+  # curve(dlogitnorm(x, mu, 1), col = 'red', add = T)
+  # curve(dlogitnorm(x, estm, 1), col ='blue', add = T)
+  # return(cbind(estm, div, c))
+  return(g)
 }
 
 
@@ -176,27 +229,32 @@ est.mu <- function(prior, mu){
 
 # mu = 0
 ```{r}
-m1<-est.mu( un, 0)
-m2<-est.mu( nor, 0)
+m1<-est.mu( un, 0,3, 'unif')
+m2<-est.mu( nor, 0, 3, 'norm')
 # m3<-est.mu( bet, 0)
-m4<-est.mu( sn, 0)
+m4<-est.mu( sn, 0, 3, 'skewnorm')
 
+ggarrange(m1,m2,m4, ncol = 2,nrow = 2)
 ```
 
 # mu = 1
 ```{r}
-m5<-est.mu( un, 1)
-m6<-est.mu( nor, 1)
-# m7<-est.mu( bet, 1)
-m8<-est.mu( sn, 1)
+m5<-est.mu( un, 1,3, 'unif')
+m6<-est.mu( nor, 1, 3, 'norm')
+# m7<-est.mu( bet, 1, )
+m8<-est.mu( sn, 1,3, 'skewnorm')
+
+ggarrange(m5,m5,m8, ncol = 2,nrow = 2)
 ```
 
 # mu = 2
 ```{r}
-m9<-est.mu( un,  2)
-m10 <-est.mu( nor, 2)
+m9<-est.mu( un,  2,10, 'unif')
+m10<-est.mu( nor, 2,10, 'norm')
 # m11<-est.mu( bet, 2)
-m12<-est.mu( sn,  2)
+m12<- est.mu( sn,  2, 10, 'skewnorm')
+
+ggarrange(m9,m10,m12, ncol = 2,nrow = 2)
 ```
 
 
