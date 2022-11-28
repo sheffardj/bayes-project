@@ -41,10 +41,12 @@ beep(sound = 4) # alert to alg completion
 
  # need to convert to numeric values
 colnames(estimates) <- c('case', "run_id", 'mu.post', 'sigma.post')
+# estimated values not numeric due to an earlier transformation
 estimates <- estimates %>% mutate_at(c('mu.post', 'sigma.post'), as.numeric)
-estimates$pi <- run_ids[,1]
-estimates$pj <- run_ids[,2]
+estimates$pi <- run_ids[,1] # identify pairs of priors pi
+estimates$pj <- run_ids[,2] # and pj
 
+# just aligns the underlying mu/sigma pairs
 estimates <- estimates %>% 
   mutate(mu = c(rep(0,27), rep(1,27), rep(2,27))) %>% 
   mutate(sigma = rep(c(rep(3.16,9), rep(1.78, 9), rep(0.32, 9)),3))
@@ -54,6 +56,9 @@ estimates
 end <- Sys.time()
 end - start
 
+
+if(0){
+### BELOW JUST SOME PLOTS
 par(mfrow=c(3,3))
 for(jj in 1:dim(parms)[1]){
   datj <- get(paste0('dat',jj))
@@ -93,4 +98,4 @@ for(ii in 1:9){
   tmp <- arr[,1:3]
    image_xyz(tmp$mu, tmp$sigma, tmp$prob, main=paste("Likelihood", ii))
 }
-      
+}
