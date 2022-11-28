@@ -16,6 +16,7 @@ library(sn)
 library(dplyr)
 library(philentropy)
 library(bayestestR)
+library(LaplacesDemon)
 ```
 
 # the priors 
@@ -34,7 +35,7 @@ sn <- function(d){
   dsn(d, .2,.2)
 }
 
-
+ rlogitnorm(15, 0, 3.16)
 ```
 
 # funtion to out put the graph and estimates
@@ -66,7 +67,8 @@ est.calc <- function(prior, s){
   est <- mean((dlogitnorm(dat, 0, s)*prior(sigma0))/dnom)
   
   #KL Divergence
-  samp <- rlogitnorm(15000, 0,  est)
+  truf <- plogitnorm(dat, 0, est)
+  samp <- plogitnorm(dat, 0,  est)
   mat <- rbind(dat/sum(dat), samp/sum(samp))
   div <- KL(mat)
   
@@ -88,28 +90,38 @@ est.calc <- function(prior, s){
 
 # logitnorm sigma = 3.16
 ```{r}
-est.calc( un, 3.16)
-est.calc( nor, 3.16)
-est.calc( bet, 3.16)
-est.calc( sn, 3.16)
+s1 <- est.calc( un, 3.16)
+s2 <-est.calc( nor, 3.16)
+s3<- est.calc( bet, 3.16)
+s4<- est.calc( sn, 3.16)
+
+
+
 
 ```
 
 # logitnorm with sigma = 1.78
 ```{r}
-est.calc( un, 1.78)
-est.calc( nor, 1.78)
-est.calc( bet, 1.78)
-est.calc(sn, 1.78)
+s5<-est.calc( un, 1.78)
+s6<-est.calc( nor, 1.78)
+s7<-est.calc( bet, 1.78)
+s8<-est.calc(sn, 1.78)
 ```
 
 #logitnorm sigma = .32
 ```{r}
-est.calc( un, .32)
-est.calc( nor, .32)
-est.calc( bet, .32)
-est.calc( sn, .32)
+s9<-est.calc( un, .32)
+s10<-est.calc( nor, .32)
+s11<-est.calc( bet, .32)
+s12<-est.calc( sn, .32)
 ```
+
+```{r}
+sigma <- data.frame(rbind(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12))
+# write.csv(sigma, 'sigmaestimates.csv')
+```
+
+
 # mu est function 
 ```{r}
 est.mu <- function(prior, mu){
@@ -137,9 +149,10 @@ est.mu <- function(prior, mu){
   estm <- mean(((dlogitnorm(dat, mu, 1)*prior(mu0))/dnom))
   
    #KL Divergence
-  samp <- rlogitnorm(15000, estm,  1)
-  mat <- rbind(dat/sum(dat), samp/sum(samp))
-  div <- KL(mat)
+  truef <- plogitnorm(dat, mu, 1)
+  samp <- plogitnorm(dat, estm,  1)
+  mat <- rbind(truef/sum(truef) ,samp/sum(samp))
+  div <- KL(mat )
   
   #CI
   c <- ci(samp, ci = .95, method = 'HDI', verbose =F)
@@ -157,31 +170,33 @@ est.mu <- function(prior, mu){
 
 # mu = 0
 ```{r}
-est.mu( un, 0)
-est.mu( nor, 0)
-est.mu( bet, 0)
-est.mu( sn, 0)
+m1<-est.mu( un, 0)
+m2<-est.mu( nor, 0)
+m3<-est.mu( bet, 0)
+m4<-est.mu( sn, 0)
 
 ```
 
 # mu = 1
 ```{r}
-est.mu( un, 1)
-est.mu( nor, 1)
-est.mu( bet, 1)
-est.mu( sn, 1)
+m5<-est.mu( un, 1)
+m6<-est.mu( nor, 1)
+m7<-est.mu( bet, 1)
+m8<-est.mu( sn, 1)
 ```
 
 # mu = 2
 ```{r}
-est.mu( un,  2)
-est.mu( nor, 2)
-est.mu( bet, 2)
-est.mu( sn,  2)
+m9<-est.mu( un,  2)
+m10 <-est.mu( nor, 2)
+m11<-est.mu( bet, 2)
+m12<-est.mu( sn,  2)
 ```
 
 
 ```{r}
+mu<-data.frame(rbind(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12))
+# write.csv(mu, 'muestimates.csv')
 ```
 
 
