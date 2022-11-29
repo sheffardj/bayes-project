@@ -89,28 +89,31 @@ ex <- matrix(dat, ncol=1)
 colnames(ex) <- "x"
 
 g <-ggplot(as.data.frame(ex), aes(x=x)) + 
-  geom_histogram(aes(y=..density..),  color= 'lightblue') +
+  geom_histogram(aes(y=..density..),  color= 'lightblue', fill='lightblue') +
   stat_function( # orignal params
     fun = dlogitnorm,
     geom = "line",
     color= 'red',
     n=300,
     args = list(mu = 0, sigma = s),
-    show.legend = T
+    inherit.aes = F, 
+    na.rm = T
   ) + 
   stat_function( # estimated params
     fun = dlogitnorm,
     geom = "line",
-    color= 'white',
+    color= 'black',
     n=300,
     args = list(mu = 0, sigma = est),
-    show.legend = T
-  ) + ylim(0,u) + ggtitle(t)  
+    inherit.aes = F, 
+    na.rm = T
+  ) + ylim(0,u) + ggtitle(t)
+  scale_color_manual(values = c('est curve' ='red','true curve'='black')) 
   
   
   
   
-  # return(cbind(est,div,c)) # uncomment if you want to estimates
+  return(cbind(est,div,c)) # uncomment if you want to estimates
   return(g)
 }
 
@@ -131,21 +134,21 @@ s1
 
 # logitnorm with sigma = 1.78
 ```{r}
-s5<-est.calc( un, 1.78,2, 'unif')
-s6<-est.calc( nor, 1.78, 2, 'norm')
+s5<-est.calc( un, 1.78,2, 'D) Uniform prior, sigma = 1.78')
+s6<-est.calc( nor, 1.78, 2, 'E) Norm prior, sigma = 1.78')
 # s7<-est.calc( bet, 1.78)
-s8<-est.calc(sn, 1.78, 2, 'skewnorm')
-ss2<-ggarrange(s5,s6,s8, ncol = 2,nrow = 2)
-annotate_figure(ss2, top = 'Estimated and true curves for sigma = 1.78')
+s8<-est.calc(sn, 1.78, 2, 'F) Skewnorm prior, sigma = 1.78')
+# ss2<-ggarrange(s5,s6,s8, ncol = 2,nrow = 2)
+# annotate_figure(ss2, top = 'Estimated and true curves for sigma = 1.78')
 ```
 
 #logitnorm sigma = .32
 ```{r}
 
-s9<-est.calc( un, .32, 5, 'unif')
-s10<-est.calc( nor, .32, 5,'norm')
+s9<-est.calc( un, .32, 5, 'G) Uniform prior, sigma = 0.32')
+s10<-est.calc( nor, .32, 5,'H) Norm prior, sigma = 0.32')
 # s11<-est.calc( bet, .32)
-s12<-est.calc( sn, .32, 5, 'skewnrom')
+s12<-est.calc( sn, .32, 5, 'I) Skewnrom prior, sigma = 0.32')
 ss3<-ggarrange(s9,s10,s12, ncol = 2,nrow = 2)
 annotate_figure(ss3, top = 'Estimated and true curves for sigma = 0.32')
 ```
