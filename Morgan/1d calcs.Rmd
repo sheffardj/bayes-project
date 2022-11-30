@@ -41,7 +41,7 @@ sn <- function(d){
 
 # funtion to out put the graph and estimates
 ```{r}
-est.calc <- function(prior, s, u,t){
+est.calc <- function(prior, s, u,t,l){
   set.seed(0)
   dat <- rlogitnorm(15000, 0, s) 
   
@@ -84,60 +84,49 @@ est.calc <- function(prior, s, u,t){
   # curve(dlogitnorm(x, 0, s), col = 'red', add = T)
   # curve(dlogitnorm(x, 0, est), col ='blue', add = T)
   
-ex <- matrix(dat, ncol=1)
+ex <- data.frame(matrix(dat, ncol=1))
 
 colnames(ex) <- "x"
 
-g <-ggplot(as.data.frame(ex), aes(x=x)) + 
-  geom_histogram(aes(y=..density..),  color= 'lightblue', fill='lightblue') +
+g <-ggplot(ex, aes(x=x)) + 
+  geom_histogram(aes(y= ..density..),  color= 'lightblue', fill='lightblue') +
   stat_function( # orignal params
+    aes (color= 'red'),
     fun = dlogitnorm,
     geom = "line",
-    color= 'red',
     n=300,
     args = list(mu = 0, sigma = s),
-    inherit.aes = F, 
     na.rm = T
   ) + 
   stat_function( # estimated params
+    aes(color = 'black'),
     fun = dlogitnorm,
     geom = "line",
-    color= 'black',
     n=300,
     args = list(mu = 0, sigma = est),
-    inherit.aes = F, 
     na.rm = T
-  ) + ylim(0,u) + ggtitle(t)
-  scale_color_manual(values = c('est curve' ='red','true curve'='black')) 
-  
-  
-  
-  
-  return(cbind(est,div,c)) # uncomment if you want to estimates
+  )  + scale_color_manual('denstiy', values = c('red','black'), labels = c('est',l))+ ylim(0,u) + ggtitle(t)
+  # return(cbind(est,div,c)) # uncomment if you want to estimates
   return(g)
 }
-
-
-
 
 ```
 
 # logitnorm sigma = 3.16
 ```{r}
 
-s1<- est.calc( un, 3.16, 5, 'A) Uniform prior, true sigma = 3.16')
- s2<-est.calc( nor, 3.16,5, 'B) Norm prior,true sigma = 3.16')
+s1<- est.calc( un, 3.16, 5, 'A) Uniform prior','true=3.16')
+ s2<-est.calc( nor, 3.16,5, 'B) Norm prior','true=3.16')
 # s3<- est.calc( bet, 3.16)
- s4<-est.calc( sn, 3.16, 5,'C) Skewnorm prior, true sigma = 3.16')
-s1
+ s4<-est.calc( sn, 3.16, 5,'C) Skewnorm prior', 'true=3.16')
 ```
 
 # logitnorm with sigma = 1.78
 ```{r}
-s5<-est.calc( un, 1.78,2, 'D) Uniform prior, sigma = 1.78')
-s6<-est.calc( nor, 1.78, 2, 'E) Norm prior, sigma = 1.78')
+s5<-est.calc( un, 1.78,2, 'D) Uniform prior', ' true=1.78')
+s6<-est.calc( nor, 1.78, 2, 'E) Norm prior','true=1.78')
 # s7<-est.calc( bet, 1.78)
-s8<-est.calc(sn, 1.78, 2, 'F) Skewnorm prior, sigma = 1.78')
+s8<-est.calc(sn, 1.78, 2, 'F) Skewnorm prior','true=1.78')
 # ss2<-ggarrange(s5,s6,s8, ncol = 2,nrow = 2)
 # annotate_figure(ss2, top = 'Estimated and true curves for sigma = 1.78')
 ```
@@ -145,19 +134,23 @@ s8<-est.calc(sn, 1.78, 2, 'F) Skewnorm prior, sigma = 1.78')
 #logitnorm sigma = .32
 ```{r}
 
-s9<-est.calc( un, .32, 5, 'G) Uniform prior, sigma = 0.32')
-s10<-est.calc( nor, .32, 5,'H) Norm prior, sigma = 0.32')
+s9<-est.calc( un, .32, 5, 'G) Uniform prior','true=0.32')
+s10<-est.calc( nor, .32, 5,'H) Norm prior', 'true=0.32')
 # s11<-est.calc( bet, .32)
-s12<-est.calc( sn, .32, 5, 'I) Skewnrom prior, sigma = 0.32')
-ss3<-ggarrange(s9,s10,s12, ncol = 2,nrow = 2)
-annotate_figure(ss3, top = 'Estimated and true curves for sigma = 0.32')
+s12<-est.calc( sn, .32, 5, 'I) Skewnrom prior','true=0.32')
+# ss3<-ggarrange(s9,s10,s12, ncol = 2,nrow = 2)
+# annotate_figure(ss3, top = 'Estimated and true curves for sigma = 0.32')
 ```
 
 ```{r}
 sigma <- data.frame(rbind(s1,s2,s4,s5,s6,s8,s9,s10,s12))
 # write.csv(sigma, 'sigmaestimates.csv')
-sst <- ggarrange(s1,s2,s4,s5,s6,s8,s9,s10,s12, ncol = 3,nrow = 3)
-annotate_figure(sst, top = 'Estimated and true curves for varying mu and fixed sigma')
+# sst <- ggarrange(s1,s2,s4,s5,s6,s8,s9,s10,s12, ncol = 3,nrow = 1, common.legend = T, legend = 'right')
+v1<-ggarrange(s1,s2,s4, ncol = 3,nrow = 1, common.legend = T, legend = 'right')
+v2<-ggarrange(s5,s6,s8, ncol = 3,nrow = 1, common.legend = T, legend = 'right')
+v3<-ggarrange(s9,s10,s12, ncol = 3,nrow = 1, common.legend = T, legend = 'right')
+vt<-ggarrange(v1,v2,v3, ncol = 1,nrow = 3)
+annotate_figure(vt, top = 'Estimated and true curves for varying sigma and mu = 0')
 
 
 ```
@@ -165,7 +158,7 @@ annotate_figure(sst, top = 'Estimated and true curves for varying mu and fixed s
 
 # mu est function 
 ```{r}
-est.mu <- function(prior, mu,u, t){
+est.mu <- function(prior, mu,u, t,l){
   set.seed(0)
   dat <- rlogitnorm(15000, mu, 1) 
   
@@ -207,21 +200,21 @@ est.mu <- function(prior, mu,u, t){
 colnames(ex) <- "x"
 
 g <-ggplot(as.data.frame(ex), aes(x=x)) + 
-  geom_histogram(aes(y=..density..)) +
+  geom_histogram(aes(y=..density..),color= 'lightblue', fill='lightblue') +
   stat_function( # orignal params
     fun = dlogitnorm,
     geom = "line",
-    color= 'skyblue3',
+    aes(color= 'red'),
     n=300,
     args = list(mu = mu, sigma = 1)
   ) + 
   stat_function( # estimated params
     fun = dlogitnorm,
     geom = "line",
-    color= 'darkgoldenrod1',
+    aes(color= 'black'),
     n=300,
     args = list(mu = estm, sigma = 1)
-  ) + ylim(0,u) +ggtitle(t)
+  )+ scale_color_manual('denstiy', values = c('red','black'), labels = c('est',l))+ ylim(0,u) + ggtitle(t)
   
   
   # hist(dat, probability = T, ylim = c(0,5))
@@ -237,21 +230,20 @@ g <-ggplot(as.data.frame(ex), aes(x=x)) +
 
 # mu = 0
 ```{r}
-m1<-est.mu( un, 0,3, 'unif')
-m2<-est.mu( nor, 0, 3, 'norm')
+m1<-est.mu( un, 0,3, 'A) Unif prior', 'true=0')
+m2<-est.mu( nor, 0, 3, 'B) Norm prior', 'true=0')
 # m3<-est.mu( bet, 0)
-m4<-est.mu( sn, 0, 3, 'skewnorm')
-
+m4<-est.mu( sn, 0, 3, 'C) Skewnorm prior','true=0')
 # mm1 <- ggarrange(m1,m2,m4, ncol = 2,nrow = 2)
 # annotate_figure(mm1, top = 'Estimated and true curves for mu = 0')
 ```
 
 # mu = 1
 ```{r}
-m5<-est.mu( un, 1,3, 'unif')
-m6<-est.mu( nor, 1, 3, 'norm')
+m5<-est.mu( un, 1,3, 'D) Unif prior', 'true=1')
+m6<-est.mu( nor, 1, 3, 'E) Norm, prior', 'true=1')
 # m7<-est.mu( bet, 1, )
-m8<-est.mu( sn, 1,3, 'skewnorm')
+m8<-est.mu( sn, 1,3, 'F) Skewnorm prior', 'true=1')
 
 # mm2 <-ggarrange(m5,m5,m8, ncol = 2,nrow = 2)
 # annotate_figure(mm2, top = 'Estimated and true curves for mu = 1')
@@ -259,10 +251,10 @@ m8<-est.mu( sn, 1,3, 'skewnorm')
 
 # mu = 2
 ```{r}
-m9<-est.mu( un,  2,13, 'unif')
-m10<-est.mu( nor, 2,13, 'norm')
+m9<-est.mu( un,  2,13, 'G) Unif prior', 'true=2')
+m10<-est.mu( nor, 2,13, 'H) Norm prior', 'true=2')
 # m11<-est.mu( bet, 2)
-m12<- est.mu( sn,  2, 13, 'skewnorm')
+m12<- est.mu( sn,  2, 13, 'I) Skewnorm prior', 'true=2')
 
 # mm3 <-ggarrange(m9,m10,m12, ncol = 2,nrow = 2)
 # annotate_figure(mm3, top = 'Estimated and true curves for mu = 2')
@@ -277,12 +269,17 @@ mu<-data.frame(rbind(m1,m2,m4,m5,m6,m8,m9,m10,m12))
 
 ```{r}
 
-mmt <- ggarrange(m1,m2,m4,m5,m6,m8,m9,m10,m12, ncol = 3,nrow = 3)
-annotate_figure(mmt, top = 'Estimated and true curves for varying mu and fixed sigma')
+mmt <- ggarrange(m1,m2,m4,m5,m6,m8,m9,m10,m12, ncol = 3,nrow = 3,common.legend = T, legend = 'right')
+annotate_figure(mmt, top = 'Estimated and true curves for varying mu and sigma  = 1')
 ```
 
 
 ```{r}
+f1<- ggarrange(m1,m2,m4, ncol = 3,nrow = 1,common.legend = T, legend = 'right')
+f2<-ggarrange(m5,m6,m8, ncol = 3,nrow = 1,common.legend = T, legend = 'right')
+f3 <- ggarrange(m9,m10,m12, ncol = 3,nrow = 1,common.legend = T, legend = 'right')
+ft <- ggarrange(f1,f2,f3, ncol = 1,nrow = 3)
+annotate_figure(ft, top = 'Estimated and true curves for varying mu and sigma  = 1')
 ```
 
 
