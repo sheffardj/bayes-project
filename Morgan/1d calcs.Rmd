@@ -28,10 +28,6 @@ un <- function (d) {
 nor <- function (d){
   dnorm(d, 0, 1)
   }
-bet <- function(d){
-  dbeta(d, .5, .5)
-}
-
 sn <- function(d){
   dsn(d, .2,.2)
 }
@@ -42,8 +38,8 @@ sn <- function(d){
 # funtion to out put the graph and estimates
 ```{r}
 est.calc <- function(prior, s, u,t,l){
-  set.seed(0)
-  dat <- rlogitnorm(15000, 0, s) 
+  set.seed(8776)
+  dat <- rlogitnorm(3000, 0, s) 
   
   simps_three8 <- function(f, a, b, n){
   # function f
@@ -76,7 +72,7 @@ est.calc <- function(prior, s, u,t,l){
   div <- KL(mat)
   
   #CI
-  simp <- rlogitnorm(15000, 0, est)
+  simp <- rlogitnorm(3000, 0, est)
   c <- ci(simp, ci = .95, method = 'HDI', verbose =F)
   
   #plots
@@ -106,8 +102,8 @@ g <-ggplot(ex, aes(x=x)) +
     args = list(mu = 0, sigma = est),
     na.rm = T
   )  + scale_color_manual('denstiy', values = c('red','black'), labels = c('est',l))+ ylim(0,u) + ggtitle(t)
-  # return(cbind(est,div,c)) # uncomment if you want to estimates
-  return(g)
+  return(cbind(est,div,c)) # uncomment if you want to estimates
+  # return(g)
 }
 
 ```
@@ -160,7 +156,7 @@ annotate_figure(vt, top = 'Estimated and true curves for varying sigma and mu = 
 ```{r}
 est.mu <- function(prior, mu,u, t,l){
   set.seed(0)
-  dat <- rlogitnorm(15000, mu, 1) 
+  dat <- rlogitnorm(1000, mu, 1) 
   
   simps_three8 <- function(f, a, b, n){
   # function f
@@ -191,7 +187,7 @@ est.mu <- function(prior, mu,u, t,l){
   div <- KL(mat)
   
   #CI
-  simp <-rlogitnorm(15000, estm,1)
+  simp <-rlogitnorm(1000, estm,1)
   c <- ci(simp, ci = .95, method = 'HDI', verbose =F)
   
 
