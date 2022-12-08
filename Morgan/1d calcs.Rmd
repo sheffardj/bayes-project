@@ -5,7 +5,7 @@ date: "2022-11-17"
 ---
 
 $$
-p(\sigma|x) = \frac{p(\sigma)p(x|\sigma)}{\int p(\sigma)p(x|\sigma)}\\
+p(\rho|x) = \frac{p(\rho)p(x|\rho)}{\int p(\rho)p(x|\rho)}\\
 
 $$
 
@@ -22,15 +22,25 @@ library(ggpubr)
 
 # the priors 
 ```{r}
-un <- function (d) {
-  dunif(d, -1, 1)
-  }
-nor <- function (d){
+un <- function (d, v) {
+  dunif(d, v-1,v+1 )
+}
+nor <- function (d, v){
   dnorm(d, 0, 1)
   }
-sn <- function(d){
-  dsn(d, .2,.2)
-}
+dpl <- function(x, mean, sd = 1) {
+    # Laplace (double exponential) density function with mean equal to \code{mean} and standard deviation equal to \code{sd}. 
+    # 'x': Vector of quantiles.
+    # 'mean': Population mean.
+    # 'sd': Population standard deviation.
+    # example:    dlaplace( seq( 20, 80, length.out=11 ), 50, 10 )
+    if (!is.numeric(x))  stop("'x' must be numeric.")
+    if (!is.numeric(mean))  stop("'mean' must be numeric.")
+    if (!is.numeric(sd))  stop("'sd' must be numeric.")
+    if (sd<0)  stop("'sd' cannot be negative.")
+    if (sd==0)  return( dnorm(x, mean, 0) )
+    exp(-abs(x-mean)*sqrt(2)/sd)/(sd*sqrt(2))
+  }
 
 
 ```
@@ -56,14 +66,14 @@ est.calc <- function(prior, s, u,t,l){
   sigma0 <- var(dat)
   
   tests <- function (x){
-  dlogitnorm(dat, 0 , x)*prior(x)
+  dlogitnorm(dat, 0 , x)*prior(x, s)
   } 
   
-  dnom <- simps_three8(tests, 0,1, 1000) 
+  dnom <- simps_three8(tests, max(sigma0 - 1, 0.1), s + 1, 1000) 
   
   
 
-  est <- mean((dlogitnorm(dat, 0, s)*prior(sigma0))/dnom)
+  est <- mean((dlogitnorm(dat, 0, s)*prior(sigma0, s))/dnom)
   
   #KL Divergence
   truf <- plogitnorm(dat, 0, s)
@@ -102,8 +112,8 @@ g <-ggplot(ex, aes(x=x)) +
     args = list(mu = 0, sigma = est),
     na.rm = T
   )  + scale_color_manual('denstiy', values = c('red','black'), labels = c('est',l))+ ylim(0,u) + ggtitle(t)
-  return(cbind(est,div,c)) # uncomment if you want to estimates
-  # return(g)
+  # return(cbind(est,div,c)) # uncomment if you want to estimates
+  return(g)
 }
 
 ```
@@ -114,7 +124,7 @@ g <-ggplot(ex, aes(x=x)) +
 s1<- est.calc( un, 3.16, 5, 'A) Uniform prior','true=3.16')
  s2<-est.calc( nor, 3.16,5, 'B) Norm prior','true=3.16')
 # s3<- est.calc( bet, 3.16)
- s4<-est.calc( sn, 3.16, 5,'C) Skewnorm prior', 'true=3.16')
+ s4<-est.calc( dpl, 3.16, 5,'C) Laplace prior', 'true=3.16')
 ```
 
 # logitnorm with sigma = 1.78
@@ -122,7 +132,7 @@ s1<- est.calc( un, 3.16, 5, 'A) Uniform prior','true=3.16')
 s5<-est.calc( un, 1.78,2, 'D) Uniform prior', ' true=1.78')
 s6<-est.calc( nor, 1.78, 2, 'E) Norm prior','true=1.78')
 # s7<-est.calc( bet, 1.78)
-s8<-est.calc(sn, 1.78, 2, 'F) Skewnorm prior','true=1.78')
+s8<-est.calc(dpl, 1.78, 2, 'F) Laplace prior','true=1.78')
 # ss2<-ggarrange(s5,s6,s8, ncol = 2,nrow = 2)
 # annotate_figure(ss2, top = 'Estimated and true curves for sigma = 1.78')
 ```
@@ -133,7 +143,7 @@ s8<-est.calc(sn, 1.78, 2, 'F) Skewnorm prior','true=1.78')
 s9<-est.calc( un, .32, 5, 'G) Uniform prior','true=0.32')
 s10<-est.calc( nor, .32, 5,'H) Norm prior', 'true=0.32')
 # s11<-est.calc( bet, .32)
-s12<-est.calc( sn, .32, 5, 'I) Skewnrom prior','true=0.32')
+s12<-est.calc( dpl, .32, 5, 'I) Laplace prior','true=0.32')
 # ss3<-ggarrange(s9,s10,s12, ncol = 2,nrow = 2)
 # annotate_figure(ss3, top = 'Estimated and true curves for sigma = 0.32')
 ```
@@ -141,7 +151,7 @@ s12<-est.calc( sn, .32, 5, 'I) Skewnrom prior','true=0.32')
 ```{r}
 sigma <- data.frame(rbind(s1,s2,s4,s5,s6,s8,s9,s10,s12))
 # write.csv(sigma, 'sigmaestimates.csv')
-# sst <- ggarrange(s1,s2,s4,s5,s6,s8,s9,s10,s12, ncol = 3,nrow = 1, common.legend = T, legend = 'right')
+sst <- ggarrange(s1,s2,s4,s5,s6,s8,s9,s10,s12, ncol = 3,nrow = 1, common.legend = T, legend = 'right')
 v1<-ggarrange(s1,s2,s4, ncol = 3,nrow = 1, common.legend = T, legend = 'right')
 v2<-ggarrange(s5,s6,s8, ncol = 3,nrow = 1, common.legend = T, legend = 'right')
 v3<-ggarrange(s9,s10,s12, ncol = 3,nrow = 1, common.legend = T, legend = 'right')
@@ -173,12 +183,12 @@ est.mu <- function(prior, mu,u, t,l){
   mu0 <- mean(dat)
   
   tests <- function (x){
-  dlogitnorm(dat, x , 1)*prior(x)
+  dlogitnorm(dat, x , 1)*prior(x,mu)
   } 
-  dnom <- simps_three8(tests, 0,1, 1000) 
+  dnom <- simps_three8(tests, mu-.5,mu+.5, 1000) 
   mu0 <- mean(dat)
   
-  estm <- mean(((dlogitnorm(dat, mu, 1)*prior(mu0))/dnom))
+  estm <- mean(((dlogitnorm(dat, mu, 1)*prior(mu0, mu))/dnom))
   
    #KL Divergence
   truef <- plogitnorm(dat, mu, 1)
@@ -213,9 +223,7 @@ g <-ggplot(as.data.frame(ex), aes(x=x)) +
   )+ scale_color_manual('denstiy', values = c('red','black'), labels = c('est',l))+ ylim(0,u) + ggtitle(t)
   
   
-  # hist(dat, probability = T, ylim = c(0,5))
-  # curve(dlogitnorm(x, mu, 1), col = 'red', add = T)
-  # curve(dlogitnorm(x, estm, 1), col ='blue', add = T)
+
   # return(cbind(estm, div, c))
   return(g)
 }
@@ -229,17 +237,17 @@ g <-ggplot(as.data.frame(ex), aes(x=x)) +
 m1<-est.mu( un, 0,3, 'A) Unif prior', 'true=0')
 m2<-est.mu( nor, 0, 3, 'B) Norm prior', 'true=0')
 # m3<-est.mu( bet, 0)
-m4<-est.mu( sn, 0, 3, 'C) Skewnorm prior','true=0')
+m4<-est.mu( dpl, 0, 3, 'C) Laplace prior','true=0')
 # mm1 <- ggarrange(m1,m2,m4, ncol = 2,nrow = 2)
 # annotate_figure(mm1, top = 'Estimated and true curves for mu = 0')
 ```
 
 # mu = 1
 ```{r}
-m5<-est.mu( un, 1,3, 'D) Unif prior', 'true=1')
-m6<-est.mu( nor, 1, 3, 'E) Norm, prior', 'true=1')
+m5<-est.mu( un, 1,5, 'D) Unif prior', 'true=1')
+m6<-est.mu( nor, 1, 5, 'E) Norm, prior', 'true=1')
 # m7<-est.mu( bet, 1, )
-m8<-est.mu( sn, 1,3, 'F) Skewnorm prior', 'true=1')
+m8<-est.mu( dpl, 1,5, 'F) Laplace prior', 'true=1')
 
 # mm2 <-ggarrange(m5,m5,m8, ncol = 2,nrow = 2)
 # annotate_figure(mm2, top = 'Estimated and true curves for mu = 1')
@@ -250,7 +258,7 @@ m8<-est.mu( sn, 1,3, 'F) Skewnorm prior', 'true=1')
 m9<-est.mu( un,  2,13, 'G) Unif prior', 'true=2')
 m10<-est.mu( nor, 2,13, 'H) Norm prior', 'true=2')
 # m11<-est.mu( bet, 2)
-m12<- est.mu( sn,  2, 13, 'I) Skewnorm prior', 'true=2')
+m12<- est.mu( dpl,  2, 13, 'I) Laplace prior', 'true=2')
 
 # mm3 <-ggarrange(m9,m10,m12, ncol = 2,nrow = 2)
 # annotate_figure(mm3, top = 'Estimated and true curves for mu = 2')
@@ -264,9 +272,9 @@ mu<-data.frame(rbind(m1,m2,m4,m5,m6,m8,m9,m10,m12))
 
 
 ```{r}
-
-mmt <- ggarrange(m1,m2,m4,m5,m6,m8,m9,m10,m12, ncol = 3,nrow = 3,common.legend = T, legend = 'right')
-annotate_figure(mmt, top = 'Estimated and true curves for varying mu and sigma  = 1')
+# 
+# mmt <- ggarrange(m1,m2,m4,m5,m6,m8,m9,m10,m12, ncol = 3,nrow = 3,common.legend = T, legend = 'right')
+# annotate_figure(mmt, top = 'Estimated and true curves for varying mu and sigma  = 1')
 ```
 
 
