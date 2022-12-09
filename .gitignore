@@ -28,3 +28,4 @@ vignettes/*.pdf
 .Renviron
 README.html
 .DS_Store
+bayes-project.Rproj

@@ -124,18 +124,22 @@ for(ii in 1:dim(estimates)[1]){
   # store in matrix to compare with original logitnorm dat
   tmp <- rbind(og_data/sum(og_data),samp/sum(samp))
   
-  KL(tmp) # kullback-leibler = 0.8939065 
+  # store KL divergence in estimates table
   estimates[ii,"kl"] <- KL(tmp)
+  
+  # start CREDIBLE intervals
   arr0 <- arr[, (3 * ii - 2):(3 * ii)]
   
+  #sample from mu and sigma by probability
   sample.rows <-sample(1:nrow(arr0),size=1e3,replace=TRUE,
                        prob=arr0$prob )
   sample.mu <-arr0$mu[sample.rows]
   sample.sigma <-arr0$sigma[sample.rows]
   
-  post <- tibble(sample.mu,
-                 sample.sigma)
+  # arrange sample data for credible interval computation
+  post <- tibble(sample.mu, sample.sigma)
   
+  # retrieve CI and set relative values
   CI <- describe_posterior(
     post,
     centrality = "MAP",
@@ -157,4 +161,4 @@ for(ii in 1:dim(estimates)[1]){
 estimates %>% as.data.frame() %>%  arrange(kl)
 beep(sound = 2) # alert to alg completion
 
-fwrite(estimates, file='estimates.csv')
+# fwrite(estimates, file='estimates.csv')

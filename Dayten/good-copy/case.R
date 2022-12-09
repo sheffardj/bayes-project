@@ -15,8 +15,8 @@ case <- function(n, case_num, parm1, parm2, grid_size) {
   
   # assuming we have logitnorm data, convert normal with logit transformation
   # to estimate mu and sigma
-  mu0 <<- (logit(og_data) %>% mean()) + rnorm(1,0,0.5)
-  sigma0 <<- (sqrt(logit(og_data) %>% var())) + rnorm(1,0,0.5)
+  mu0 <<- (logit(og_data) %>% mean())
+  sigma0 <<- (sqrt(logit(og_data) %>% var()))
   
   #write h1, h2, S, xx, and yy to global.env
   simpsons2d(mu0, sigma0, grid_size)
