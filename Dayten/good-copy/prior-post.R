@@ -15,7 +15,7 @@ dlaplace <-
 
 # priors for shape parameters
 p1 <<- function (x, var) {
-  dunif(x, var-0.5, var+0.5) #neg values ok
+  dunif(x, var-3, var+3) #neg values ok
 }
 
 p2 <<- function (x, var) {
@@ -23,7 +23,7 @@ p2 <<- function (x, var) {
 }  
   
 p3 <<- function(x, var) {
-  dlaplace(x, var, 1)
+  dlaplace(x, var, 3)
 }
 
 # our likelihood function

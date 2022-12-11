@@ -19,7 +19,7 @@ colnames(run_ids) <- c('pi', 'pj')
 estimates <- matrix(NA, nrow=0, ncol=4) %>% as.data.frame()
 colnames(estimates) <- c('case', "run_id", 'mu.post', 'sigma.post')
 
-grid_size <- 30
+grid_size <- 50
 # place to store posteriors (grid values) for heatmaps
 arr <- matrix(nrow = (2 * grid_size + 1)^2, ncol=0) 
 
@@ -65,54 +65,71 @@ estimates$ps_mu <- NA
 estimates$pd_sig <- NA
 estimates$ps_sig <- NA
 
-
 end <- Sys.time()
 end - start
 
 
 
-if(0){
-### BELOW JUST SOME PLOTS
-par(mfrow=c(3,3))
-for(jj in 1:dim(parms)[1]){
-  datj <- get(paste0('dat',jj))
-  est.mu <- logit(datj) %>% mean()
-  est.sig <- sqrt(logit(datj) %>% var())
-                    
-  hist(get(paste0("dat",jj)), probability = T,
-       main=
-         bquote(mu[est]~" = "~.(est.mu)~" "~sigma[est]~" ="~.(est.sig)),
-       xlab="",
-       ylim=c(0,12))
-  est <- estimates %>% filter(case == jj)
-  for(ii in 1:dim(run_ids)[1]){
+if(0){ # RESULTS PLOT
+  png(file="2d-results.png",
+      width=1800, height=1200, units="px", res=190, bg='white')
+  par(mfrow=c(3,3), mar=c(3,4,4,2))
+  for(jj in 1:dim(parms)[1]){
+    datj <- get(paste0('dat',jj))
+    est.mu <- logit(datj) %>% mean()
+    est.sig <- sqrt(logit(datj) %>% var())
+                      
+    max <- max(dlogitnorm(seq(0, 1, by = 0.01), 
+                          mu = parms[jj, "mu"], 
+                          sigma = parms[jj, "sigma"]))
+    print(max)
+    hist(get(paste0("dat",jj)), probability = T,
+         main=
+           bquote(mu[est]~" = "~.(round(est.mu,3))~" "~sigma[est]~" ="~.(round(est.sig,3))),
+         xlab="",
+         breaks=5,
+         col='lightblue',
+         ylim=c(0, max + ifelse(jj %in% c(2,3,8,9), 1, 0) + ifelse( jj == 9, 2, 0)))
+    est <- estimates %>% filter(case == jj)
+    for(ii in 1:dim(run_ids)[1]){
+      curve(
+        dlogitnorm(x, mu = est[ii, "mu.post"], sigma = est[ii, "sigma.post"]),
+        from = 0,
+        to = 1,
+        add
+        = T,
+        col = rev(hcl.colors(12, 'Viridis'))[ii],
+        lty=c(6,4,2,3)[ii %% 4 + 1],
+        n = 300
+      )
+    }
     curve(
-      dlogitnorm(x, mu = est[ii, "mu.post"], sigma = est[ii, "sigma.post"]),
+      dlogitnorm(x, mu = parms[jj, "mu"], sigma = parms[jj, "sigma"]),
       from = 0,
       to = 1,
-      add
-      = T,
-      col = ii,
-      lty=2,
-      n = 300
+      add = T,
+      col = custPalette[3],
+      n = 300,
     )
   }
-  curve(
-    dlogitnorm(x, mu = parms[jj, "mu"], sigma = parms[jj, "sigma"]),
-    from = 0,
-    to = 1,
-    add = T,
-    col = 'red',
-    n = 300,
-  )
+  dev.off()
+}
+# more plots - heatmaps
+if(0){
+  png(file="2d-posterior.png",
+      width=1800, height=1200, units="px", bg='white')
+  labels <- c("Uniform", "Normal", "Laplace")
+  par(mfrow=c(3,3), mar=c(4,4,2,0.5))
+  for(ii in 10:18){
+    priors <- run_ids[ii - 9,]
+    tmp <- arr[,(ii*3-2):(3*ii)] %>% arrange(mu, sigma)
+    image_xyz(x=tmp$mu, y=tmp$sigma, z=tmp$prob,
+              xlab=bquote(mu["est"]), ylab=bquote(sigma["est"]), main=paste("Priors:",labels[priors[1]], "x", labels[priors[2]]))
+  }
+  dev.off()
 }
 
-par(mfrow=c(3,3))
-for(ii in 1:9){
-  tmp <- arr[,1:3]
-   image_xyz(tmp$mu, tmp$sigma, tmp$prob, main=paste("Likelihood", ii))
-}
-}
+
 
 for(ii in 1:dim(estimates)[1]){
   mu.post <- estimates[ii,"mu.post"]
@@ -162,3 +179,109 @@ estimates %>% as.data.frame() %>%  arrange(kl)
 beep(sound = 2) # alert to alg completion
 
 # fwrite(estimates, file='estimates.csv')
+# estimates<-fread("estimates.csv")
+
+estimates %>% 
+  group_by(case) %>% 
+  slice_min(order_by = kl, n=1) -> best_cases
+
+best_cases %>% 
+  select(case, mu, sigma, pi, pj, mu.post, sigma.post, kl,
+         map_mu, map_sig, mu_low, mu_hi, sig_low, sig_hi) -> best_cases
+
+best_cases[,c(3,6:7,9:14)] <- apply(best_cases[,c(3,6:7,9:14)], 2, function(x) round(x,2))
+best_cases[,8] <- apply(best_cases[,8], 2, function(x) round(x,4))
+best_cases[,4:5] <- apply(best_cases[,4:5], 2, function(x) c("U", "N", "L")[x])
+
+gt(ungroup(best_cases)) %>% 
+  tab_header(title = "Best Estimate Per Case") %>% 
+  tab_stubhead(label = "Case") %>%
+  cols_label(
+    case= "Case",
+    mu= html("&mu;"),
+    sigma= html("&sigma;"),
+    mu.post = html("&mu;<sub>post</sub>"),
+    sigma.post = html("&sigma;<sub>post</sub>"),
+    kl="KL",
+    map_mu = html("&mu;<sub>MAP</sub>"),
+    map_sig = html("&sigma;<sub>MAP</sub>"),
+    mu_low=html("&mu;<sub>low</sub>"),
+    mu_hi=html("&mu;<sub>high</sub>"),
+    sig_low=html("&sigma;<sub>low</sub>"),
+    sig_hi=html("&sigma;<sub>high</sub>"),
+  ) -> base_table
+
+# add spanners
+base_table <- base_table %>% 
+  tab_spanner(label = md("*Configuration p(x)*"),
+              columns = c(case, mu, sigma, pi, pj)) %>% 
+  tab_spanner(label = md("*Posteriors q(x)*"),
+              columns = c(mu.post, sigma.post)) %>% 
+  tab_spanner(label = md("*Score*"),
+              columns = c(kl))%>% 
+  tab_spanner(label = md("*Credibility Interval*"),
+              columns = c(map_mu, map_sig, mu_low, mu_hi, sig_low, sig_hi))
+
+  
+  
+  
+# add colors  
+base_table <- base_table  %>%
+  data_color(
+    columns = c(mu.post, sigma.post),
+    colors = scales::col_numeric(
+      palette = paletteer::paletteer_d(
+        palette = "ggsci::red_material"
+      ) %>%
+        as.character(),
+      domain = NULL
+    )
+  ) %>%
+  data_color(
+    columns = c(kl),
+    colors = scales::col_numeric(
+      palette = paletteer::paletteer_d(
+        palette = "ggsci::green_material"
+      ) %>%
+        as.character(),
+      domain = NULL
+    )
+  ) %>% 
+  data_color(
+    columns = c(map_mu, map_sig, mu_low, mu_hi, sig_low, sig_hi),
+    colors = scales::col_numeric(
+      palette = paletteer::paletteer_d(
+        palette = "ggsci::yellow_material"
+      ) %>%
+        as.character(),
+      domain = NULL
+    )
+  ) %>% 
+  data_color(
+    columns = c(case, mu, sigma),
+    colors = scales::col_numeric(
+      palette = paletteer::paletteer_d(
+        palette = "ggsci::blue_material"
+      ) %>%
+        as.character(),
+      domain = NULL
+    )
+  ) %>% 
+  data_color(
+    columns = c(pi,pj),
+    colors = scales::col_factor(
+      palette = paletteer::paletteer_d(
+        palette = "ggsci::purple_material"
+      ) %>%
+        as.character(),
+      domain = NULL
+    )
+  ) 
+base_table %>% 
+  cols_width(everything() ~ px(60)) -> table_plt
+
+# library(webshot)
+# gtsave(
+#     table_plt,
+#     "2d-table.png"
+#   )

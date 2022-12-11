@@ -9,3 +9,6 @@ if(!require(tidyr)){install.packages("tidyr"); library(tidyr)}
 if(!require(philentropy)){install.packages("philentropy"); library(philentropy)}
 if(!require(sn)){install.packages("sn"); library(sn)}
 if(!require(beepr)){install.packages("beepr"); library(beepr)}
+if(!require(grDevices)){install.packages("grDevices"); library(grDevices)}
+if(!require(paletteer)){install.packages("paletteer"); library(paletteer)}
+if(!require(gt)){install.packages("gt"); library(gt)}

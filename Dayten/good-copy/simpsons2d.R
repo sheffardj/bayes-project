@@ -7,8 +7,8 @@ simpsons2d <- function(mu0, sigma0, grid_size){
   
   ax = mu0 - 0.5# range for mu +/- one
   bx = mu0 + 0.5
-  ay = max(sigma0 - 1, 0.1) # range for sigma cant be <= 0, breaks estimation
-  by = sigma0 + 1 # and 2 past current estimate
+  ay = max(sigma0 - 0.55, 0.01) # range for sigma cant be <= 0, breaks estimation
+  by = sigma0 + 0.75 # and 2 past current estimate
   
   h1 <<- (bx - ax) / (n1 - 1)  #length of subdivisions
   h2 <<- (by - ay) / (n2 - 1)
