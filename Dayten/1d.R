@@ -17,7 +17,8 @@ nor <- function (d, v){
   dnorm(d, 0, 1)
 }
 lp <- function(x, mean, sd = 1) {
-  # Laplace (double exponential) density function with mean equal to \code{mean} and standard deviation equal to \code{sd}. 
+  # Laplace (double exponential) density function with mean equal to...
+  # ... \code{mean} and standard deviation equal to \code{sd}. 
   # 'x': Vector of quantiles.
   # 'mean': Population mean.
   # 'sd': Population standard deviation.
@@ -84,10 +85,12 @@ call_case <- function(fixed, fixed_val, free_val, prior, grid_size=200){
   # obtain likelihood
   if(fixed == "mu"){
     # Likelihood with mu fixed
-    LL_obs <- mapply(dlogitnorm, mu=fixed_val, sigma=xx, MoreArgs = list(x=dat), SIMPLIFY = T)
+    LL_obs <- mapply(dlogitnorm, mu=fixed_val, sigma=xx, 
+                     MoreArgs = list(x=dat), SIMPLIFY = T)
   } else {
     # Likelihood with sigma fixed
-    LL_obs <- mapply(dlogitnorm, mu=xx, sigma=fixed_val, MoreArgs = list(x=dat), SIMPLIFY = T)
+    LL_obs <- mapply(dlogitnorm, mu=xx, sigma=fixed_val, 
+                     MoreArgs = list(x=dat), SIMPLIFY = T)
   }
   LL <- abs(apply(LL_obs, 2, prod))
   
@@ -96,9 +99,8 @@ call_case <- function(fixed, fixed_val, free_val, prior, grid_size=200){
   # y %>% plot(type='l')
   
   # compute the denominator with Simpsons rule
-  dnom <-
-    h * (y[1] + y[nn] + 4 * sum(y[(2:(nn - 1))[2:(nn - 1) %% 2 == 0]]) + 2 *
-           sum(y[(2:(nn - 1))[2:(nn - 1) %% 2 == 1]])) / 3
+  dnom <- h * (y[1] + y[nn] + 3 * sum(y[(2:(nn - 1))[2:(nn - 1) %% 3 != 1]]) + 
+           2 * sum(y[(2:(nn - 1))[2:(nn - 1) %% 3 == 1]])) / 8
   
   # compute the posterior and assign to Global Env,.
   posterior <- c(y/dnom)
@@ -148,7 +150,7 @@ for(ii in c(0,1,2)){
     best_nor <- group_priors[2, 'best_est']
     best_lp <- group_priors[3, 'best_est']
     
-    sig.hat <- round(mean(best_un, best_nor, best_lp), 3) # just a ref for plotting
+    sig.hat <- round(mean(best_un, best_nor, best_lp), 3) # just a plotting ref
     
     # this gets a nice `ymax` since any curve or histogram prob can be the max
     hist <- hist(dat, plot=F)
@@ -159,7 +161,8 @@ for(ii in c(0,1,2)){
     ymax <- max(c(hist$density, dens_og, dens_un, dens_nor, dens_lp))
     
     hist(dat, probability = T, ylim=c(0,ymax+1), xlim=c(0,1),
-         main=bquote(mu~" = "~.(ii)~" "~sigma~" = "~.(jj)~", "~bar(sigma)~" = "~.(sig.hat)))
+         main=bquote(mu~" = "~.(ii)~" "~sigma~" = "~.(jj)~", "~
+                       bar(sigma)~" = "~.(sig.hat)))
     curve(dlogitnorm(x, ii, jj), col = 'red', add = T)
     curve(dlogitnorm(x, ii, best_un), col ='blue', lty='dashed', add = T)
     curve(dlogitnorm(x, ii, best_nor), col ='green', lty='dashed', add = T)
@@ -194,7 +197,7 @@ for(ii in c(0,1,2)){
     dens_lp <- dlogitnorm(seq(0,1,length=401), best_lp, jj)
     ymax <- max(c(hist$density, dens_og, dens_un, dens_nor, dens_lp))
     
-    hist(dat, probability = T, ylim=c(0,ymax+1),
+    hist(dat, probability = T, ylim=c(0,ymax+1), xlim-c(0,1),
          main=bquote(atop(mu~" = "~.(ii)~" "~sigma~" = "~.(jj)~", "~
                             bar(mu)~" = "~.(mu.hat))))
     curve(dlogitnorm(x, ii, jj), col = 'red', add = T)
