@@ -20,7 +20,7 @@ colnames(run_ids) <- c('pi', 'pj')
 estimates <- matrix(NA, nrow=0, ncol=4) %>% as.data.frame()
 colnames(estimates) <- c('case', "run_id", 'mu.post', 'sigma.post')
 
-grid_size <- 400
+grid_size <- 100
 # place to store posteriors (grid values) for heatmaps
 arr <- matrix(nrow = (2 * grid_size + 1)^2, ncol=0) 
 
@@ -71,10 +71,10 @@ end - start
 
 
 # RESULTS PLOT
-if(1){
+if(0){
   png(file="2d-results.png",
       width=1800, height=1200, units="px", res=190, bg='white')
-  par(mfrow=c(3,3), mar=c(3,4,4,2))
+  par(mfrow=c(3,3), mar=c(3,4.1,4,2))
   for(jj in 1:dim(parms)[1]){
     datj <- get(paste0('dat',jj))
     est.mu <- logit(datj) %>% mean()
@@ -86,7 +86,7 @@ if(1){
     print(max)
     hist(get(paste0("dat",jj)), probability = T,
          main=
-           bquote(mu[est]~" = "~.(round(est.mu,3))~" "~sigma[est]~" ="~.(round(est.sig,3))),
+           bquote(hat(mu)~" = "~.(round(est.mu,3))~" "~hat(sigma)~" ="~.(round(est.sig,3))),
          xlab="",
          breaks=5,
          col='lightblue',
@@ -130,8 +130,8 @@ if(0){
   dev.off()
 }
 
-
-
+# 2D ESTIMATES GT TABLE
+if(0){
 for(ii in 1:dim(estimates)[1]){
   mu.post <- estimates[ii,"mu.post"]
   sigma.post <- estimates[ii,"sigma.post"]
@@ -168,7 +168,7 @@ for(ii in 1:dim(estimates)[1]){
   estimates[ii,'map_mu'] <- CI$MAP[1]
   estimates[ii,'map_sig'] <- CI$MAP[2]
   estimates[ii,'mu_low'] <- CI$CI_low[1]
-  estimates[ii,'mu_hi'] <-  CI$CI_high[2]
+  estimates[ii,'mu_hi'] <-  CI$CI_high[1]
   estimates[ii,'sig_low'] <-  CI$CI_low[2]
   estimates[ii,'sig_hi'] <-  CI$CI_high[2]
   estimates[ii,'pd_mu'] <- CI$pd[1]
@@ -281,9 +281,5 @@ base_table <- base_table  %>%
   ) 
 base_table %>% 
   cols_width(everything() ~ px(60)) -> table_plt
-
-# library(webshot)
-# gtsave(
-#     table_plt,
-#     "2d-table.png"
-#   )
+table_plt
+}
