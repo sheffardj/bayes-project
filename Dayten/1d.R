@@ -15,7 +15,7 @@ un <- function (d, v) {
   dunif(d, v-3,v+3 )
 }
 nor <- function (d, v){
-  dnorm(d, 0, 3)
+  dnorm(d, v, 3)
 }
 lp <- function(x, mean, sd = 3) {
   # Laplace (double exponential) density function with mean equal to...
@@ -133,90 +133,6 @@ for(ii in 1:dim(cases)[1]){
 
 
 
-##### PLOTS #####
-if(0){
-### MU FIXED
-par(mfrow=c(3,3), mar=c(3,4,3,1))
-for(ii in c(0,1,2)){
-  for(jj in c(3.16, 1.78, 0.32)){
-    group_priors <- as.data.frame(cases) %>% 
-      filter(fixed=='mu' & mu==ii & sigma == jj)
-    
-    case_id <- base_cases %>% 
-      filter(mu == ii & sigma == jj) %>% 
-      pull(case_id)
-    dat <- data[, case_id]
-    
-    best_un <- group_priors[1,'best_est']
-    best_nor <- group_priors[2, 'best_est']
-    best_lp <- group_priors[3, 'best_est']
-    
-    sig.hat <- round(mean(best_un, best_nor, best_lp), 3) # just a plotting ref
-    colors <- rev(hcl.colors(12, 'Viridis'))[c(1,5,10)]
-    
-    # this gets a nice `ymax` since any curve or histogram prob can be the max
-    hist <- hist(dat, plot=F)
-    
-    dens_og  <- dlogitnorm(seq(0, 1, length = 60), ii, jj)
-    dens_un  <- dlogitnorm(seq(0, 1, length = 60), ii, best_un)
-    dens_nor <- dlogitnorm(seq(0, 1, length = 60), ii, best_nor)
-    dens_lp  <- dlogitnorm(seq(0, 1, length = 60), ii, best_lp)
-    ymax <- max(c(hist$density, dens_og, dens_un, dens_nor, dens_lp))
-    print(ymax)
-    
-    hist(dat, probability = T, ylim=c(0,ymax+1), xlim=c(0,1),
-         main=bquote(mu~" = "~.(ii)~" "~sigma~" = "~.(jj)~", "~
-                       bar(sigma)~" = "~.(sig.hat)),
-         col='lightblue')
-    curve(dlogitnorm(x, ii, jj), col = custPalette[3], add = T)
-    curve(dlogitnorm(x, ii, best_un),  col =colors[1], lty=6, add = T)
-    curve(dlogitnorm(x, ii, best_nor), col =colors[2], lty=4, add = T)
-    curve(dlogitnorm(x, ii, best_lp),  col =colors[3], lty=3, add = T)
-  }
-}
-
-
-### SIGMA FIXED
-par(mfrow=c(3,3), mar=c(3,4,3,1))
-for(ii in c(0,1,2)){
-  for(jj in c(3.16, 1.78, 0.32)){
-    group_priors <- as.data.frame(cases) %>% 
-      filter(fixed=='sigma' & mu==ii & sigma == jj)
-    
-    case_id <- base_cases %>% 
-      filter(mu == ii & sigma == jj) %>% 
-      pull(case_id)
-    dat <- data[, case_id]
-    
-    best_un <- group_priors[1,'best_est']
-    best_nor <- group_priors[2, 'best_est']
-    best_lp <- group_priors[3, 'best_est']
-    
-    mu.hat <- round(mean(best_un,best_nor,best_lp), 3) # just a ref for plotting
-    colors <- rev(hcl.colors(12, 'Viridis'))[c(1,5,10)]
-    
-    # this gets a nice `ymax` since any curve or histogram prob can be the max
-    hist <- hist(dat, plot=F)
-    dens_og  <- dlogitnorm(seq(0,1,length=60), ii, jj)
-    dens_un  <- dlogitnorm(seq(0,1,length=60), best_un, jj)
-    dens_nor <- dlogitnorm(seq(0,1,length=60), best_nor, jj)
-    dens_lp  <- dlogitnorm(seq(0,1,length=60), best_lp, jj)
-    ymax <- max(c(hist$density, dens_og, dens_un, dens_nor, dens_lp))
-    print(ymax)
-    
-    hist(dat, probability = T, ylim=c(0, ymax + 1), xlim=c(0,1),
-         main=bquote(atop(mu~" = "~.(ii)~" "~sigma~" = "~.(jj)~", "~
-                            bar(mu)~" = "~.(mu.hat))),
-         col='lightblue')
-    curve(dlogitnorm(x, ii, jj), col = custPalette[3], add = T)
-    curve(dlogitnorm(x, best_un, jj),  col =colors[1], lty=6, add = T)
-    curve(dlogitnorm(x, best_nor, jj), col =colors[2], lty=4, add = T)
-    curve(dlogitnorm(x, best_lp, jj),  col =colors[3], lty=3, add = T)
-  }
-}
-}
-
-
 ##### DIVERGENCE #####
 cases$kl <- NA
 cases$map_est <- NA
@@ -261,7 +177,8 @@ for(ii in 1:dim(cases)[1]){
   CI <- describe_posterior(
     sample.est,
     centrality = "MAP",
-    test = c("p_direction", "p_significance")
+    test = c("p_direction", "p_significance"),
+    ci=0.997
   )
   
   cases[ii,'map_est'] <- CI$MAP
@@ -279,11 +196,12 @@ cases <- cases %>%
                            TRUE ~ 3))
 
 ##### TABLE FOR MU FIXED #####
-if(0){
+if(1){
 cases %>% 
   filter(fixed=='mu') %>% 
   group_by(mu, sigma) %>% 
-  slice_min(order_by = kl, n=1) -> best_cases
+  slice_min(order_by = kl, n=1) %>% 
+  arrange(mu, desc(sigma)) -> best_cases
 best_cases[,c(5,7:11)] <- apply(best_cases[,c(5,7:11)], 2, function(x) round(x,3))
 best_cases[,6] <- apply(best_cases[,6], 2, function(x) round(x,4))
 best_cases[,3] <- apply(best_cases[,3], 2, function(x) c("U", "N", "L")[x])
@@ -315,7 +233,7 @@ base_table <- base_table %>%
               columns = c(best_est)) %>% 
   tab_spanner(label = md("*Score*"),
               columns = c(kl))%>% 
-  tab_spanner(label = md("*Credibility Interval*"),
+  tab_spanner(label = md("*.997 Credibility Interval*"),
               columns = c(map_est, est_low, est_hi))
 
 
@@ -376,12 +294,13 @@ base_table %>%
 table_plt
 }
 
-
-if(0){
+##### TABLE FOR SIGMA FIXED #####
+if(1){
   cases %>% 
     filter(fixed=='sigma') %>% 
     group_by(mu, sigma) %>% 
-    slice_min(order_by = kl, n=1) -> best_cases
+    slice_min(order_by = kl, n=1) %>%
+    arrange(mu, desc(sigma)) -> best_cases
   best_cases[,c(5,7:11)] <- apply(best_cases[,c(5,7:11)], 2, function(x) round(x,3))
   best_cases[,6] <- apply(best_cases[,6], 2, function(x) round(x,4))
   best_cases[,3] <- apply(best_cases[,3], 2, function(x) c("U", "N", "L")[x])
@@ -395,7 +314,7 @@ if(0){
     tab_stubhead(label = "Case") %>%
     cols_label(
       case= "Case",
-      mu= html("&mu;<sub>fixed</sub>"),
+      mu= html("&mu;"),
       sigma= html("&sigma;<sub>fixed</sub>"),
       prior= html("Prior"),
       best_est = html("&mu;<sub>est</sub>"),
@@ -413,7 +332,7 @@ if(0){
                 columns = c(best_est)) %>% 
     tab_spanner(label = md("*Score*"),
                 columns = c(kl))%>% 
-    tab_spanner(label = md("*Credibility Interval*"),
+    tab_spanner(label = md("*.997 Credibility Interval*"),
                 columns = c(map_est, est_low, est_hi))
   
   
@@ -472,4 +391,94 @@ if(0){
   base_table %>% 
     cols_width(everything() ~ px(60)) -> table_plt
   table_plt
+}
+
+
+
+##### PLOTS #####
+# depends on kl divergence
+if(1){
+  ### MU FIXED
+  par(mfrow=c(3,3), mar=c(3,4,3,1))
+  for(ii in c(0,1,2)){
+    for(jj in c(3.16, 1.78, 0.32)){
+      group_priors <- as.data.frame(cases) %>% 
+        filter(fixed=='mu' & mu==ii & sigma == jj)
+      
+      case_id <- base_cases %>% 
+        filter(mu == ii & sigma == jj) %>% 
+        pull(case_id)
+      dat <- data[, case_id]
+      
+      best_un <- group_priors[1,'best_est']
+      best_nor <- group_priors[2, 'best_est']
+      best_lp <- group_priors[3, 'best_est']
+      best_est <- round(group_priors[which.min(group_priors$kl),"best_est"],3)
+      
+      # sig.hat <- round(mean(best_un, best_nor, best_lp), 3) # just a plotting ref
+      colors <- rev(hcl.colors(12, 'Viridis'))[c(1,5,10)]
+      
+      # this gets a nice `ymax` since any curve or histogram prob can be the max
+      hist <- hist(dat, plot=F)
+      
+      dens_og  <- dlogitnorm(seq(0, 1, length = 60), ii, jj)
+      dens_un  <- dlogitnorm(seq(0, 1, length = 60), ii, best_un)
+      dens_nor <- dlogitnorm(seq(0, 1, length = 60), ii, best_nor)
+      dens_lp  <- dlogitnorm(seq(0, 1, length = 60), ii, best_lp)
+      ymax <- max(c(hist$density, dens_og, dens_un, dens_nor, dens_lp))
+      print(ymax)
+      
+      hist(dat, probability = T, ylim=c(0,ymax+1), xlim=c(0,1),
+           main=bquote(mu~" = "~.(ii)~" "~sigma~" = "~.(jj)~", "~
+                         hat(sigma)~" = "~.(best_est)),
+           col='lightblue')
+      curve(dlogitnorm(x, ii, jj), col = custPalette[3], add = T)
+      curve(dlogitnorm(x, ii, best_un),  col =colors[1], lty=6, add = T)
+      curve(dlogitnorm(x, ii, best_nor), col =colors[2], lty=4, add = T)
+      curve(dlogitnorm(x, ii, best_lp),  col =colors[3], lty=3, add = T)
+    }
+  }
+}
+
+
+### SIGMA FIXED
+if(1){
+  par(mfrow=c(3,3), mar=c(3,4,3,1))
+  for(ii in c(0,1,2)){
+    for(jj in c(3.16, 1.78, 0.32)){
+      group_priors <- as.data.frame(cases) %>% 
+        filter(fixed=='sigma' & mu==ii & sigma == jj)
+      
+      case_id <- base_cases %>% 
+        filter(mu == ii & sigma == jj) %>% 
+        pull(case_id)
+      dat <- data[, case_id]
+      
+      best_un <- group_priors[1,'best_est']
+      best_nor <- group_priors[2, 'best_est']
+      best_lp <- group_priors[3, 'best_est']
+      best_est <- round(group_priors[which.min(group_priors$kl),"best_est"],3)
+      
+      # mu.hat <- round(mean(best_un,best_nor,best_lp), 3) # just a ref for plotting
+      colors <- rev(hcl.colors(12, 'Viridis'))[c(1,5,10)]
+      
+      # this gets a nice `ymax` since any curve or histogram prob can be the max
+      hist <- hist(dat, plot=F)
+      dens_og  <- dlogitnorm(seq(0,1,length=60), ii, jj)
+      dens_un  <- dlogitnorm(seq(0,1,length=60), best_un, jj)
+      dens_nor <- dlogitnorm(seq(0,1,length=60), best_nor, jj)
+      dens_lp  <- dlogitnorm(seq(0,1,length=60), best_lp, jj)
+      ymax <- max(c(hist$density, dens_og, dens_un, dens_nor, dens_lp))
+      print(ymax)
+      
+      hist(dat, probability = T, ylim=c(0, ymax + 1), xlim=c(0,1),
+           main=bquote(atop(mu~" = "~.(ii)~" "~sigma~" = "~.(jj)~", "~
+                              hat(mu)~" = "~.(best_est))),
+           col='lightblue')
+      curve(dlogitnorm(x, ii, jj), col = custPalette[3], add = T)
+      curve(dlogitnorm(x, best_un, jj),  col =colors[1], lty=6, add = T)
+      curve(dlogitnorm(x, best_nor, jj), col =colors[2], lty=4, add = T)
+      curve(dlogitnorm(x, best_lp, jj),  col =colors[3], lty=3, add = T)
+    }
+  }
 }

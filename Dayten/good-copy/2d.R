@@ -3,12 +3,13 @@ source("seed.R")
 source(paste0(getwd(),"/good-copy/prior-post.R")) # load in priors and posterior
 source(paste0(getwd(),"/good-copy/case.R")) # import function to setup simpsons
 source(paste0(getwd(),"/good-copy/estimate.R")) # import our estimation function
+custPalette <- c("#002754", "#005493",  "#C63527", "#F5AA1C")
 
 # number of points to simulate from logitnorm data
 n <- 30
 
 # all pairs of parameters
-parms <-cbind(c(rep(0,3), rep(1,3), rep(2, 3)), rep(c(3.16, 1.78, 0.32),3))
+parms <- cbind(c(rep(0,3), rep(1,3), rep(2, 3)), rep(c(3.16, 1.78, 0.32),3))
 colnames(parms) <- c("mu", "sigma")
 
 # ids to track which priors pair we're using
@@ -19,7 +20,7 @@ colnames(run_ids) <- c('pi', 'pj')
 estimates <- matrix(NA, nrow=0, ncol=4) %>% as.data.frame()
 colnames(estimates) <- c('case', "run_id", 'mu.post', 'sigma.post')
 
-grid_size <- 50
+grid_size <- 400
 # place to store posteriors (grid values) for heatmaps
 arr <- matrix(nrow = (2 * grid_size + 1)^2, ncol=0) 
 
@@ -70,7 +71,7 @@ end - start
 
 
 # RESULTS PLOT
-if(0){
+if(1){
   png(file="2d-results.png",
       width=1800, height=1200, units="px", res=190, bg='white')
   par(mfrow=c(3,3), mar=c(3,4,4,2))
@@ -160,7 +161,8 @@ for(ii in 1:dim(estimates)[1]){
   CI <- describe_posterior(
     post,
     centrality = "MAP",
-    test = c("p_direction", "p_significance")
+    test = c("p_direction", "p_significance"),
+    ci=0.997
   )
   
   estimates[ii,'map_mu'] <- CI$MAP[1]
@@ -219,7 +221,7 @@ base_table <- base_table %>%
               columns = c(mu.post, sigma.post)) %>% 
   tab_spanner(label = md("*Score*"),
               columns = c(kl))%>% 
-  tab_spanner(label = md("*Credibility Interval*"),
+  tab_spanner(label = md("*.997 Credibility Interval*"),
               columns = c(map_mu, map_sig, mu_low, mu_hi, sig_low, sig_hi))
 
   
