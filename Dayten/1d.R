@@ -37,7 +37,7 @@ n <- 30 # number of samples
 post_length <- 3 * 300 + 1 #based on simpsons 3/8
 data <- matrix(nrow = n, ncol = 9) # storage for original data
 posteriors <- matrix(nrow = post_length, ncol = 54) # storage for found posteriors
-
+xx_seqs <- matrix(nrow = post_length, ncol = 54)
 base_cases <- expand.grid(mu=0:2, sigma=c(3.16, 1.78, 0.32))
 base_cases$case_id <- 1:9
 
@@ -109,7 +109,7 @@ call_case <- function(fixed, fixed_val, free_val, prior, grid_size=200){
   best_est_index <- which.max(posterior)
   best_est <- xx[best_est_index]
   
-  return(list(dat = dat, posterior = posterior, best_est=best_est))
+  return(list(dat = dat, posterior = posterior, best_est=best_est, xx_seq = xx))
 }
 
 ##### MAIN LOOP #####
@@ -127,6 +127,7 @@ for(ii in 1:dim(cases)[1]){
   results <- call_case(fixed, fixed_val, free_val, prior)
   cases[ii,"best_est"] <- results$best_est
   posteriors[,ii] <- results$posterior
+  xx_seqs[,ii] <- results$xx_seq
   if(ii %% 6 == 0) cat(paste0(round(100*ii/dim(cases))[1], '% '))
 }
 
@@ -226,4 +227,249 @@ cases$ps <- NA
 
 
 
+for(ii in 1:dim(cases)[1]){
+  est <- cases[ii,"best_est"] 
+  
+  case_id <- base_cases %>% 
+    filter(mu == cases[ii,"mu"] & sigma == cases[ii,"sigma"]) %>% 
+    pull(case_id)
+  dat <- data[, case_id]
+  
+  if(cases[ii,"fixed"] == 'mu'){
+    samp <- rlogitnorm(n, cases[ii,"mu"],  est)
+  } else {
+    samp <- rlogitnorm(n, est,  cases[ii,"sigma"])
+  }
+  # generate samples from our estimates
+  
+  # store in matrix to compare with original logitnorm dat
+  tmp <- rbind(dat/sum(dat),samp/sum(samp))
+  
+  # store KL divergence in estimates table
+  cases[ii,"kl"] <- KL(tmp)
+  
+  # start CREDIBLE intervals
+  post <- posteriors[,ii]
+  xx <- xx_seqs[,ii]
+  #sample from mu and sigma by probability
+  sample.rows <-sample(1:length(post),size=1e3,replace=TRUE,prob=post)
+  sample.est <- xx[sample.rows]
+  
+  # arrange sample data for credible interval computation
+  
+  # retrieve CI and set relative values
+  CI <- describe_posterior(
+    sample.est,
+    centrality = "MAP",
+    test = c("p_direction", "p_significance")
+  )
+  
+  cases[ii,'map_est'] <- CI$MAP
+  cases[ii,'est_low'] <- CI$CI_low
+  cases[ii,'est_hi'] <- CI$CI_high
+  cases[ii,'pd'] <- CI$pd
+  cases[ii,'ps'] <- CI$ps
+}
 
+cases %>% str
+
+cases <- cases %>% 
+  mutate(prior = case_when(prior == 'un' ~ 1,
+                           prior == 'nor' ~ 2,
+                           TRUE ~ 3))
+
+##### TABLE FOR MU FIXED #####
+if(0){
+cases %>% 
+  filter(fixed=='mu') %>% 
+  group_by(mu, sigma) %>% 
+  slice_min(order_by = kl, n=1) -> best_cases
+best_cases[,c(5,7:11)] <- apply(best_cases[,c(5,7:11)], 2, function(x) round(x,3))
+best_cases[,6] <- apply(best_cases[,6], 2, function(x) round(x,4))
+best_cases[,3] <- apply(best_cases[,3], 2, function(x) c("U", "N", "L")[x])
+  
+best_cases$case <- 1:9
+best_cases <- best_cases[c(12, 1:3, 5:9)]
+
+
+gt(ungroup(best_cases)) %>% 
+  tab_header(title = html("Best Estimate Per Case in 1d (&mu; fixed)")) %>% 
+  tab_stubhead(label = "Case") %>%
+  cols_label(
+    case= "Case",
+    mu= html("&mu;<sub>fixed</sub>"),
+    sigma= html("&sigma;"),
+    prior= html("Prior"),
+    best_est = html("&sigma;<sub>est</sub>"),
+    kl="KL",
+    map_est = html("&sigma;<sub>MAP</sub>"),
+    est_low= html("CI<sub>low</sub>"),
+    est_hi=html("CI<sub>high</sub>"),
+  ) -> base_table
+
+# add spanners
+base_table <- base_table %>% 
+  tab_spanner(label = md("*Configuration*"),
+              columns = c(case, mu, sigma, prior)) %>% 
+  tab_spanner(label = md("*Post*"),
+              columns = c(best_est)) %>% 
+  tab_spanner(label = md("*Score*"),
+              columns = c(kl))%>% 
+  tab_spanner(label = md("*Credibility Interval*"),
+              columns = c(map_est, est_low, est_hi))
+
+
+# add colors  
+base_table <- base_table  %>%
+  data_color(
+    columns = c(best_est),
+    colors = scales::col_numeric(
+      palette = paletteer::paletteer_d(
+        palette = "ggsci::red_material"
+      ) %>%
+        as.character(),
+      domain = NULL
+    )
+  ) %>%
+  data_color(
+    columns = c(kl),
+    colors = scales::col_numeric(
+      palette = paletteer::paletteer_d(
+        palette = "ggsci::green_material"
+      ) %>%
+        as.character(),
+      domain = NULL
+    )
+  ) %>% 
+  data_color(
+    columns = c(map_est, est_low, est_hi),
+    colors = scales::col_numeric(
+      palette = paletteer::paletteer_d(
+        palette = "ggsci::yellow_material"
+      ) %>%
+        as.character(),
+      domain = NULL
+    )
+  ) %>% 
+  data_color(
+    columns = c(case, mu, sigma),
+    colors = scales::col_numeric(
+      palette = paletteer::paletteer_d(
+        palette = "ggsci::blue_material"
+      ) %>%
+        as.character(),
+      domain = NULL
+    )
+  ) %>% 
+  data_color(
+    columns = c(prior),
+    colors = scales::col_factor(
+      palette = paletteer::paletteer_d(
+        palette = "ggsci::purple_material"
+      ) %>%
+        as.character(),
+      domain = NULL
+    )
+  ) 
+base_table %>% 
+  cols_width(everything() ~ px(60)) -> table_plt
+table_plt
+}
+
+
+if(0){
+  cases %>% 
+    filter(fixed=='sigma') %>% 
+    group_by(mu, sigma) %>% 
+    slice_min(order_by = kl, n=1) -> best_cases
+  best_cases[,c(5,7:11)] <- apply(best_cases[,c(5,7:11)], 2, function(x) round(x,3))
+  best_cases[,6] <- apply(best_cases[,6], 2, function(x) round(x,4))
+  best_cases[,3] <- apply(best_cases[,3], 2, function(x) c("U", "N", "L")[x])
+  
+  best_cases$case <- 1:9
+  best_cases <- best_cases[c(12, 1:3, 5:9)]
+  
+  
+  gt(ungroup(best_cases)) %>% 
+    tab_header(title = html("Best Estimate Per Case in 1d (&sigma; fixed)")) %>% 
+    tab_stubhead(label = "Case") %>%
+    cols_label(
+      case= "Case",
+      mu= html("&mu;<sub>fixed</sub>"),
+      sigma= html("&sigma;<sub>fixed</sub>"),
+      prior= html("Prior"),
+      best_est = html("&mu;<sub>est</sub>"),
+      kl="KL",
+      map_est = html("&mu;<sub>MAP</sub>"),
+      est_low= html("CI<sub>low</sub>"),
+      est_hi=html("CI<sub>high</sub>"),
+    ) -> base_table
+  
+  # add spanners
+  base_table <- base_table %>% 
+    tab_spanner(label = md("*Configuration*"),
+                columns = c(case, mu, sigma, prior)) %>% 
+    tab_spanner(label = md("*Post*"),
+                columns = c(best_est)) %>% 
+    tab_spanner(label = md("*Score*"),
+                columns = c(kl))%>% 
+    tab_spanner(label = md("*Credibility Interval*"),
+                columns = c(map_est, est_low, est_hi))
+  
+  
+  # add colors  
+  base_table <- base_table  %>%
+    data_color(
+      columns = c(best_est),
+      colors = scales::col_numeric(
+        palette = paletteer::paletteer_d(
+          palette = "ggsci::red_material"
+        ) %>%
+          as.character(),
+        domain = NULL
+      )
+    ) %>%
+    data_color(
+      columns = c(kl),
+      colors = scales::col_numeric(
+        palette = paletteer::paletteer_d(
+          palette = "ggsci::green_material"
+        ) %>%
+          as.character(),
+        domain = NULL
+      )
+    ) %>% 
+    data_color(
+      columns = c(map_est, est_low, est_hi),
+      colors = scales::col_numeric(
+        palette = paletteer::paletteer_d(
+          palette = "ggsci::yellow_material"
+        ) %>%
+          as.character(),
+        domain = NULL
+      )
+    ) %>% 
+    data_color(
+      columns = c(case, mu, sigma),
+      colors = scales::col_numeric(
+        palette = paletteer::paletteer_d(
+          palette = "ggsci::blue_material"
+        ) %>%
+          as.character(),
+        domain = NULL
+      )
+    ) %>% 
+    data_color(
+      columns = c(prior),
+      colors = scales::col_factor(
+        palette = paletteer::paletteer_d(
+          palette = "ggsci::purple_material"
+        ) %>%
+          as.character(),
+        domain = NULL
+      )
+    ) 
+  base_table %>% 
+    cols_width(everything() ~ px(60)) -> table_plt
+  table_plt
+}
