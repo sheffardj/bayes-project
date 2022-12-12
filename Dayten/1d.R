@@ -12,12 +12,12 @@ custPalette <- c("#002754", "#005493",  "#C63527", "#F5AA1C")
 ##### PRIORS #####
 
 un <- function (d, v) {
-  dunif(d, v-1,v+1 )
+  dunif(d, v-3,v+3 )
 }
 nor <- function (d, v){
-  dnorm(d, 0, 1)
+  dnorm(d, 0, 3)
 }
-lp <- function(x, mean, sd = 1) {
+lp <- function(x, mean, sd = 3) {
   # Laplace (double exponential) density function with mean equal to...
   # ... \code{mean} and standard deviation equal to \code{sd}. 
   # 'x': Vector of quantiles.
@@ -33,9 +33,10 @@ lp <- function(x, mean, sd = 1) {
 }
 
 ##### PARAMETERS #####
-n <- 200 # number of samples
+n <- 30 # number of samples
+post_length <- 3 * 300 + 1 #based on simpsons 3/8
 data <- matrix(nrow = n, ncol = 9) # storage for original data
-posteriors <- matrix(nrow = 2 * n + 1, ncol = 54) # storage for found posteriors
+posteriors <- matrix(nrow = post_length, ncol = 54) # storage for found posteriors
 
 base_cases <- expand.grid(mu=0:2, sigma=c(3.16, 1.78, 0.32))
 base_cases$case_id <- 1:9
@@ -58,8 +59,6 @@ for(i in 1:9){
 ## Write current Case data to Global Environment (`dat` and `posterior`)
 ## Also updates `cases$best_est` in Global Env.
 call_case <- function(fixed, fixed_val, free_val, prior, grid_size=200){
-
-  
   if(fixed == "mu"){
     case_id <- base_cases %>% 
       filter(mu == fixed_val & sigma == free_val) %>% 
@@ -74,12 +73,12 @@ call_case <- function(fixed, fixed_val, free_val, prior, grid_size=200){
 
   # Toggle variable estimate whether `fixed` is mu or sigma 
   # If mu fixed, get sample VARIANCE. If not (so sigma fixed), find sample MEAN.
-  var0 <- ifelse(fixed=="mu", var(dat), mean(dat))
+  var0 <- ifelse(fixed=="mu", sd(logit(dat)), mean(logit(dat)))
   
   # set up simpsons params
   a <- ifelse(fixed=="mu", max(var0 - 1, 0.01), var0 - 1) # toggled on `fixed`
   b <- var0 + 1
-  nn = 2 * n + 1 
+  nn = post_length
   h = (b - a) / (nn - 1) #length of subdivision
   xx <- seq(a, b, length=nn)
   
@@ -99,8 +98,9 @@ call_case <- function(fixed, fixed_val, free_val, prior, grid_size=200){
   y <- LL*prior(xx, var0)
   
   # compute the denominator with Simpsons rule
-  dnom <- h * (y[1] + y[nn] + 3 * sum(y[(2:(nn - 1))[2:(nn - 1) %% 3 != 1]]) + 
-           2 * sum(y[(2:(nn - 1))[2:(nn - 1) %% 3 == 1]])) / 8
+  dnom <-
+    h * (y[1] + y[nn] + 3 * sum(y[(2:(nn - 1))[2:(nn - 1) %% 3 != 1]])  + 2 *
+           sum(y[(2:(nn - 1))[2:(nn - 1) %% 3 == 1]])) / 8
   
   # compute the posterior and assign to Global Env,.
   posterior <- c(y/dnom)
@@ -135,7 +135,7 @@ for(ii in 1:dim(cases)[1]){
 
 ##### PLOTS #####
 ### MU FIXED
-par(mfrow=c(3,3), mar=c(3,4,2,1))
+par(mfrow=c(3,3), mar=c(3,4,3,1))
 for(ii in c(0,1,2)){
   for(jj in c(3.16, 1.78, 0.32)){
     group_priors <- as.data.frame(cases) %>% 
@@ -176,7 +176,7 @@ for(ii in c(0,1,2)){
 
 
 ### SIGMA FIXED
-par(mfrow=c(3,3), mar=c(3,4,2,1))
+par(mfrow=c(3,3), mar=c(3,4,3,1))
 for(ii in c(0,1,2)){
   for(jj in c(3.16, 1.78, 0.32)){
     group_priors <- as.data.frame(cases) %>% 
@@ -213,3 +213,6 @@ for(ii in c(0,1,2)){
     curve(dlogitnorm(x, best_lp, jj),  col =colors[3], lty=3, add = T)
   }
 }
+
+
+
