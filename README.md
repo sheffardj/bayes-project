@@ -3,10 +3,7 @@
 
 #### Hanan Abousaleh, Morgan Magee, Dayten Sheffar
 
-[This is a mardown link to uvic.ca](https://uvic.ca)
-
-[This is a useful link for use of git in RStudio](https://r-bio.github.io/intro-git-rstudio/)
-
 ### Instructions
-
-See the "instructions.R" file for connecting your github account. I can help, it is not usually an easy process but worth it once it is set up.
+1. Open `init.R` and run that file to set the working directory, read in the libraries, and set the seed.
+2. The one dimensional script `1d.R` in the root is self contained and should output all plots and tables used in the paper. Some logic gates `if(0)` might need to be switched into `if(1)`.
+3. The two dimensional case is handled in the folder called `2d` where all the subscripts are coordinated in the script `2d.R`, which calls `case.R`, `simpsons2d.R`, `estimate.R` and `prior-post.R`. The script `2d.R` also has logic gates that may be switched off to speed up sourcing the script or on to plot figures and tables used in the paper. 
