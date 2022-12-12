@@ -132,8 +132,8 @@ for(ii in 1:dim(cases)[1]){
 
 
 
-
 ##### PLOTS #####
+if(0){
 ### MU FIXED
 par(mfrow=c(3,3), mar=c(3,4,3,1))
 for(ii in c(0,1,2)){
@@ -213,6 +213,17 @@ for(ii in c(0,1,2)){
     curve(dlogitnorm(x, best_lp, jj),  col =colors[3], lty=3, add = T)
   }
 }
+}
+
+
+##### DIVERGENCE #####
+cases$kl <- NA
+cases$map_est <- NA
+cases$est_low <- NA
+cases$est_hi <- NA
+cases$pd <- NA
+cases$ps <- NA
+
 
 
 

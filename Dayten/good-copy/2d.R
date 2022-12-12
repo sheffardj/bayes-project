@@ -69,8 +69,8 @@ end <- Sys.time()
 end - start
 
 
-
-if(0){ # RESULTS PLOT
+# RESULTS PLOT
+if(0){
   png(file="2d-results.png",
       width=1800, height=1200, units="px", res=190, bg='white')
   par(mfrow=c(3,3), mar=c(3,4,4,2))
@@ -114,7 +114,7 @@ if(0){ # RESULTS PLOT
   }
   dev.off()
 }
-# more plots - heatmaps
+# POSTERIOR HEATMAP FOR ONE CASE
 if(0){
   png(file="2d-posterior.png",
       width=1800, height=1200, units="px", bg='white')
